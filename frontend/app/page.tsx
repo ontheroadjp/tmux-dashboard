@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Alert,
   AppBar,
@@ -29,7 +30,7 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 import HubIcon from "@mui/icons-material/Hub";
 import LanIcon from "@mui/icons-material/Lan";
 import BoltIcon from "@mui/icons-material/Bolt";
-import { API_LABEL, fetchSession, fetchSnapshot, login, logout, postAction, type Snapshot } from "../lib/api";
+import { API_LABEL, fetchSession, fetchSnapshot, login, logout, type Snapshot } from "../lib/api";
 
 const POLL_MS = 3000;
 
@@ -65,7 +66,6 @@ const theme = createTheme({
 export default function Page() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string>("");
-  const [busy, setBusy] = useState<boolean>(false);
   const [authReady, setAuthReady] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<string>("");
@@ -74,12 +74,9 @@ export default function Page() {
   const [loginPass, setLoginPass] = useState<string>("");
   const [loginError, setLoginError] = useState<string>("");
 
-  const [targetPane, setTargetPane] = useState("");
-  const [keys, setKeys] = useState("Enter");
-  const [targetWindow, setTargetWindow] = useState("");
-  const [targetSession, setTargetSession] = useState("");
   const [selectedSessionName, setSelectedSessionName] = useState("");
   const [selectedWindowId, setSelectedWindowId] = useState("");
+  const router = useRouter();
 
   async function load() {
     try {
@@ -120,41 +117,6 @@ export default function Page() {
     return () => window.clearInterval(timer);
   }, [isAuthenticated]);
 
-  async function runAction(action: string, payload: Record<string, unknown>) {
-    try {
-      setBusy(true);
-      setError("");
-      await postAction(action, payload);
-      await load();
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "action failed";
-      if (message === "unauthorized") {
-        setIsAuthenticated(false);
-        setCurrentUser("");
-        setSnapshot(null);
-        return;
-      }
-      setError(message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function onSendKeys(e: FormEvent) {
-    e.preventDefault();
-    runAction("send_keys", { target_pane: targetPane, keys });
-  }
-
-  function onSelectWindow(e: FormEvent) {
-    e.preventDefault();
-    runAction("select_window", { target_window: targetWindow });
-  }
-
-  function onSwitchSession(e: FormEvent) {
-    e.preventDefault();
-    runAction("switch_client", { target_session: targetSession });
-  }
-
   async function onLogin(e: FormEvent) {
     e.preventDefault();
     if (!loginUser.trim() || !loginPass.trim()) {
@@ -184,7 +146,6 @@ export default function Page() {
     setSnapshot(null);
   }
 
-  const allowed = useMemo(() => new Set(snapshot?.allowed_actions ?? []), [snapshot?.allowed_actions]);
   const sortedSessions = useMemo(() => {
     const sessions = snapshot?.tmux.sessions ?? [];
     return [...sessions].sort((a, b) => {
@@ -401,7 +362,12 @@ export default function Page() {
                         {selectedWindow ? (
                           <Stack spacing={0.75}>
                             {selectedWindow.panes.map((pane) => (
-                              <Paper key={pane.id} variant="outlined" sx={{ p: 1, bgcolor: "#FFFFFF" }}>
+                              <Paper
+                                key={pane.id}
+                                variant="outlined"
+                                sx={{ p: 1, bgcolor: "#FFFFFF", cursor: "pointer", "&:hover": { borderColor: "primary.main" } }}
+                                onClick={() => router.push(`/pane/${encodeURIComponent(pane.id)}`)}
+                              >
                                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                                   <Typography variant="body2">pane No.{pane.index}</Typography>
                                   <Chip size="small" label={pane.id} />
@@ -465,36 +431,6 @@ export default function Page() {
                       </ListItem>
                     ))}
                   </List>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" sx={{ mb: 1 }}>Actions</Typography>
-
-                  <Stack component="form" spacing={1} onSubmit={onSendKeys} sx={{ mb: 2 }}>
-                    <TextField size="small" label="target pane" value={targetPane} onChange={(e) => setTargetPane(e.target.value)} placeholder="%1" />
-                    <TextField size="small" label="keys" value={keys} onChange={(e) => setKeys(e.target.value)} placeholder="Enter" />
-                    <Button type="submit" variant="contained" disabled={!allowed.has("send_keys") || busy}>send_keys</Button>
-                  </Stack>
-
-                  <Stack component="form" spacing={1} onSubmit={onSelectWindow} sx={{ mb: 2 }}>
-                    <TextField size="small" label="target window" value={targetWindow} onChange={(e) => setTargetWindow(e.target.value)} placeholder="session:1" />
-                    <Button type="submit" variant="contained" disabled={!allowed.has("select_window") || busy}>select_window</Button>
-                  </Stack>
-
-                  <Stack component="form" spacing={1} onSubmit={onSwitchSession} sx={{ mb: 2 }}>
-                    <TextField size="small" label="target session" value={targetSession} onChange={(e) => setTargetSession(e.target.value)} placeholder="session-name" />
-                    <Button type="submit" variant="contained" disabled={!allowed.has("switch_client") || busy}>switch_client</Button>
-                  </Stack>
-
-                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                    <Button size="small" variant="outlined" onClick={() => runAction("kill_pane", { target_pane: targetPane })} disabled={!allowed.has("kill_pane") || busy}>kill_pane</Button>
-                    <Button size="small" variant="outlined" onClick={() => runAction("kill_window", { target_window: targetWindow })} disabled={!allowed.has("kill_window") || busy}>kill_window</Button>
-                    <Button size="small" variant="outlined" onClick={() => runAction("kill_session", { target_session: targetSession })} disabled={!allowed.has("kill_session") || busy}>kill_session</Button>
-                    <Button size="small" variant="outlined" onClick={() => runAction("new_window", { target_session: targetSession })} disabled={!allowed.has("new_window") || busy}>new_window</Button>
-                    <Button size="small" variant="outlined" onClick={() => runAction("split_window", { target_pane: targetPane, direction: "vertical" })} disabled={!allowed.has("split_window") || busy}>split_window</Button>
-                  </Stack>
                 </CardContent>
               </Card>
             </Box>

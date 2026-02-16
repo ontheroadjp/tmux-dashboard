@@ -4,7 +4,7 @@ from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from flask import Flask, jsonify, request
 
 from .actions import execute_action
-from .collectors import collect_network_state, collect_tmux_state
+from .collectors import collect_network_state, collect_pane_detail, collect_tmux_state
 from .config import load_config
 
 
@@ -93,6 +93,18 @@ def create_app() -> Flask:
                 "allowed_actions": sorted(cfg.allowed_actions),
             }
         )
+
+    @app.route("/api/panes/<pane_id>", methods=["GET"])
+    def pane_detail(pane_id: str):
+        user = authenticate_request()
+        if not user:
+            return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+        detail = collect_pane_detail(pane_id)
+        if detail is None:
+            return jsonify({"ok": False, "error": f"pane '{pane_id}' not found"}), 404
+
+        return jsonify({"ok": True, **detail})
 
     @app.route("/api/actions/<action>", methods=["POST", "OPTIONS"])
     def actions(action: str):

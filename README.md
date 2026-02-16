@@ -56,6 +56,8 @@ Login flow:
 - Open frontend and login from the UI
 - Frontend stores backend bearer token in `HttpOnly` cookie via `/api/auth/login`
 - `/api/snapshot` and `/api/actions/*` are proxied from Next.js to backend with `Authorization: Bearer <token>`
+- Top page does not show Actions; click a pane to open `/pane/[paneId]`
+- Pane detail page shows pane metadata, current pane output, and pane-targeted Actions
 
 Default API resolution:
 - `NEXT_PUBLIC_API_BASE` is set: use that value directly from browser

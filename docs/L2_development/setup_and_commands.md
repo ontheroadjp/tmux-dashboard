@@ -36,6 +36,9 @@
   - 根拠: `frontend/app/api/auth/login/route.ts:1`
   - 根拠: `frontend/app/api/auth/session/route.ts:1`
   - 根拠: `frontend/app/api/auth/logout/route.ts:1`
+- frontend は `/api/panes/[paneId]` で pane 詳細（出力含む）を backend `/api/panes/<pane_id>` に中継する
+  - 根拠: `frontend/app/api/panes/[paneId]/route.ts:1`
+  - 根拠: `backend/tmux_dashboard/app.py:95`
 - backend 中継先は `BACKEND_API_BASE` 優先、未指定時 `http://127.0.0.1:5001`
   - 根拠: `frontend/app/api/snapshot/route.ts:3`
 - frontend 実行ポート `4000`（dev/start ともに固定）
