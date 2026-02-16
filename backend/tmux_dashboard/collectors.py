@@ -120,7 +120,6 @@ def collect_tmux_state() -> Dict[str, object]:
             "title": pane_title,
             "process": _ps_details(pane_pid),
         }
-
         window = windows.get(window_id)
         if window:
             window["panes"].append(pane)
