@@ -26,6 +26,8 @@
   - 根拠: `backend/run.py:6`
 - frontend 参照先 API 既定値 `http://127.0.0.1:5001`
   - 根拠: `frontend/lib/api.ts:1`
+- frontend 実行ポート `4000`（dev/start ともに固定）
+  - 根拠: `frontend/package.json:5`
 
 ## 未確認事項
 - CI 上の標準実行手順。
