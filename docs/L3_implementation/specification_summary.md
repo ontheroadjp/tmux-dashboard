@@ -35,21 +35,36 @@
 - 3秒ポーリングで snapshot 更新
   - 根拠: `frontend/app/page.tsx:34`
 - tmux/network/actions を1ページで表示
-  - 根拠: `frontend/app/page.tsx:268`
+  - 根拠: `frontend/app/page.tsx:293`
 - Material Design 3 ベースの UI（MUI theme + AppBar/Card/Chip/TextField/Button）で構成
   - 根拠: `frontend/app/page.tsx:44`
 - 表示機能（snapshot）と操作機能（actions API 呼び出し）は維持
   - 根拠: `frontend/app/pane/[paneId]/page.tsx:112`
 - tmux セクションは「セッションカード一覧」をトップ表示とし、選択セッションのウインドウを Tabs で表示
   - 根拠: `frontend/app/page.tsx:330`
+- セッションカードはモバイル表示で2列グリッド表示（`xs`）
+  - 根拠: `frontend/app/page.tsx:326`
 - 選択ウインドウ内で pane 情報を表示し、`pane No.{pane.index}` を表示
-  - 根拠: `frontend/app/page.tsx:382`
+  - 根拠: `frontend/app/page.tsx:393`
 - トップページは Actions セクションを表示せず、pane クリックで `/pane/[paneId]` に遷移する
-  - 根拠: `frontend/app/page.tsx:337`
-  - 根拠: `frontend/app/page.tsx:368`
+  - 根拠: `frontend/app/page.tsx:299`
+  - 根拠: `frontend/app/page.tsx:390`
 - pane 詳細ページは「pane情報 + 現在出力 + Actions」を表示し、Actions の対象は選択中 pane 固定
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:199`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:231`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:216`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:259`
+- ヘッダーは左端アプリアイコンでトップ遷移し、ログアウトはアイコンボタン、ユーザー表示はアバターで行う
+  - 根拠: `frontend/app/page.tsx:273`
+  - 根拠: `frontend/app/page.tsx:279`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:189`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:195`
+- API 表示（`API: ${API_LABEL}`）はヘッダー外の本文上部に表示する
+  - 根拠: `frontend/app/page.tsx:288`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:204`
+- スマホ表示での横幅変動を抑えるため、主要コンテナに `minWidth: 0` とテキスト折り返し制御を適用
+  - 根拠: `frontend/app/page.tsx:287`
+  - 根拠: `frontend/app/page.tsx:360`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:203`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:243`
 - 初期選択は「番号が最も若いセッション」「index が最小のウインドウ」
   - 根拠: `frontend/app/page.tsx:153`
 
