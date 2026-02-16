@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 from dataclasses import dataclass
 from typing import Set
 
@@ -36,7 +37,10 @@ def load_config() -> AppConfig:
 
     auth_user = os.getenv("DASHBOARD_AUTH_USER", "admin").strip()
     auth_password = os.getenv("DASHBOARD_AUTH_PASSWORD", "admin").strip()
-    auth_secret = os.getenv("DASHBOARD_AUTH_SECRET", "change-this-secret").strip()
+    auth_secret = os.getenv("DASHBOARD_AUTH_SECRET", "").strip()
+    if not auth_secret:
+        # Generate a strong per-process secret when env is not supplied.
+        auth_secret = secrets.token_urlsafe(48)
     ttl_raw = os.getenv("DASHBOARD_AUTH_TOKEN_TTL_SEC", "86400").strip()
     try:
         ttl = int(ttl_raw)
