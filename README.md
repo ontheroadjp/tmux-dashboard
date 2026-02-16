@@ -14,8 +14,33 @@ Backend API endpoint: `http://127.0.0.1:5001`
 Auth environment variables (backend):
 - `DASHBOARD_AUTH_USER` (default: `admin`)
 - `DASHBOARD_AUTH_PASSWORD` (default: `admin`)
-- `DASHBOARD_AUTH_SECRET` (required in real use)
+- `DASHBOARD_AUTH_SECRET` (optional: if omitted, a random secret is auto-generated at process start)
 - `DASHBOARD_AUTH_TOKEN_TTL_SEC` (default: `86400`)
+
+### Backend restart procedure (when auth settings are changed)
+
+```bash
+pkill -f "backend/run.py" || true
+lsof -nP -iTCP:5001 -sTCP:LISTEN
+cd backend
+DASHBOARD_AUTH_USER=admin DASHBOARD_AUTH_PASSWORD=hogehoge ./venv/bin/python run.py
+```
+
+- If you use auto-generated secret (no `DASHBOARD_AUTH_SECRET`), previously issued tokens become invalid after restart.
+- If you set fixed `DASHBOARD_AUTH_SECRET`, previously issued tokens remain valid until token expiry.
+- After restart, logout once in browser (or delete `tmux_dashboard_token` cookie) before login retest.
+
+Direct login check:
+
+```bash
+curl -i -X POST http://127.0.0.1:5001/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"user":"admin","password":"admin"}'
+
+curl -i -X POST http://127.0.0.1:5001/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"user":"admin","password":"hogehoge"}'
+```
 
 ## Frontend (Next.js)
 
