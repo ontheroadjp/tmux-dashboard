@@ -26,6 +26,12 @@
   - 根拠: `frontend/app/page.tsx:102`
 - 表示機能（snapshot）と操作機能（actions API 呼び出し）は維持
   - 根拠: `frontend/app/page.tsx:75`
+- tmux セクションは「セッションカード一覧」をトップ表示とし、選択セッションのウインドウを Tabs で表示
+  - 根拠: `frontend/app/page.tsx:229`
+- 選択ウインドウ内で pane 情報を表示し、`pane No.{pane.index}` を表示
+  - 根拠: `frontend/app/page.tsx:281`
+- 初期選択は「番号が最も若いセッション」「index が最小のウインドウ」
+  - 根拠: `frontend/app/page.tsx:160`
 
 ## 未確認事項
 - API 認証方式
