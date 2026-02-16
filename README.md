@@ -22,8 +22,16 @@ npm run dev
 Frontend endpoint: `http://127.0.0.1:4000`
 
 Default API resolution:
-- `NEXT_PUBLIC_API_BASE` is set: use that value
-- not set: use `http(s)://<current-host>:5001`
+- `NEXT_PUBLIC_API_BASE` is set: use that value directly from browser
+- not set: use same-origin Next.js API routes (`/api/*`) and proxy to backend
+- proxy destination default: `http://127.0.0.1:5001` (`BACKEND_API_BASE` で変更可能)
+
+Example (when backend is not local 127.0.0.1):
+
+```bash
+cd frontend
+BACKEND_API_BASE=http://<backend-host>:5001 npm run dev
+```
 
 ## Action Scope Configuration
 
