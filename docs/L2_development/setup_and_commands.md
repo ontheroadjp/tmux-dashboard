@@ -11,7 +11,7 @@
 - `backend_dev`: `cd backend && ./venv/bin/python run.py`
 - `backend_test`: `cd backend && ./venv/bin/pytest -q`
 - `frontend_install`: `cd frontend && npm install`
-- `frontend_dev`: `cd frontend && NEXT_PUBLIC_API_BASE=http://127.0.0.1:5001 npm run dev`
+- `frontend_dev`: `cd frontend && npm run dev`
 - `frontend_build`: `cd frontend && npm run build`
 - `frontend_start`: `cd frontend && npm run start`
 
@@ -24,7 +24,7 @@
   - 根拠: `frontend/package.json:11`
 - backend 実行ポート `127.0.0.1:5001`
   - 根拠: `backend/run.py:6`
-- frontend 参照先 API 既定値 `http://127.0.0.1:5001`
+- frontend API 参照先は `NEXT_PUBLIC_API_BASE` 優先、未指定時は `http(s)://<current-host>:5001`
   - 根拠: `frontend/lib/api.ts:1`
 - frontend 実行ポート `4000`（dev/start ともに固定）
   - 根拠: `frontend/package.json:5`
