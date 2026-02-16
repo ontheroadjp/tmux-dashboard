@@ -9,6 +9,8 @@
   - 根拠: `backend/tmux_dashboard/app.py:10`
 - `frontend/`: Next.js UI。
   - 根拠: `frontend/package.json:6`
+  - 補足: UI ライブラリとして Material UI を利用。
+  - 根拠: `frontend/package.json:11`
 
 ## 現在の機能（実装済み）
 - tmux 状態取得（sessions/windows/panes）。
@@ -21,6 +23,8 @@
   - 根拠: `backend/tmux_dashboard/actions.py:25`
 - 操作許可範囲の環境変数制御（`DASHBOARD_ALLOWED_ACTIONS`）。
   - 根拠: `backend/tmux_dashboard/config.py:26`
+- フロント UI は Material Design 3 コンポーネント構成（MUI ThemeProvider/AppBar/Card/Chip など）。
+  - 根拠: `frontend/app/page.tsx:1`
 
 ## 未確認事項
 - 本番運用時の認証・認可要件。
