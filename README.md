@@ -11,6 +11,12 @@ python3 -m venv venv
 
 Backend API endpoint: `http://127.0.0.1:5001`
 
+Auth environment variables (backend):
+- `DASHBOARD_AUTH_USER` (default: `admin`)
+- `DASHBOARD_AUTH_PASSWORD` (default: `admin`)
+- `DASHBOARD_AUTH_SECRET` (required in real use)
+- `DASHBOARD_AUTH_TOKEN_TTL_SEC` (default: `86400`)
+
 ## Frontend (Next.js)
 
 ```bash
@@ -20,6 +26,11 @@ npm run dev
 ```
 
 Frontend endpoint: `http://127.0.0.1:4000`
+
+Login flow:
+- Open frontend and login from the UI
+- Frontend stores backend bearer token in `HttpOnly` cookie via `/api/auth/login`
+- `/api/snapshot` and `/api/actions/*` are proxied from Next.js to backend with `Authorization: Bearer <token>`
 
 Default API resolution:
 - `NEXT_PUBLIC_API_BASE` is set: use that value directly from browser
