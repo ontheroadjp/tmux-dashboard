@@ -46,6 +46,14 @@
   - 根拠: `frontend/app/page.tsx:326`
 - 選択ウインドウ内で pane 情報を表示し、`pane No.{pane.index}` を表示
   - 根拠: `frontend/app/page.tsx:393`
+- pane title の文字列に応じてアイコン表示を切り替える（titleベース判定）
+  - `codex` / `claude code` / `gemini` を含む: AI agent アイコン（緑）
+  - `server` / `サーバー` を含む: server アイコン（青）
+  - `tunnel` / `ssh` を含む: ssh アイコン
+  - 根拠: `frontend/app/page.tsx:40`
+  - 根拠: `frontend/app/page.tsx:421`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:54`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:244`
 - トップページは Actions セクションを表示せず、pane クリックで `/pane/[paneId]` に遷移する
   - 根拠: `frontend/app/page.tsx:299`
   - 根拠: `frontend/app/page.tsx:390`
