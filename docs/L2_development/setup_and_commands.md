@@ -24,8 +24,11 @@
   - 根拠: `frontend/package.json:11`
 - backend 実行ポート `127.0.0.1:5001`
   - 根拠: `backend/run.py:6`
-- frontend API 参照先は `NEXT_PUBLIC_API_BASE` 優先、未指定時は `http(s)://<current-host>:5001`
+- frontend API 参照先は `NEXT_PUBLIC_API_BASE` 優先。未指定時は same-origin `/api/*` を利用し、Next route handler から backend へ中継する。
   - 根拠: `frontend/lib/api.ts:1`
+  - 根拠: `frontend/app/api/snapshot/route.ts:1`
+- backend 中継先は `BACKEND_API_BASE` 優先、未指定時 `http://127.0.0.1:5001`
+  - 根拠: `frontend/app/api/snapshot/route.ts:3`
 - frontend 実行ポート `4000`（dev/start ともに固定）
   - 根拠: `frontend/package.json:5`
 

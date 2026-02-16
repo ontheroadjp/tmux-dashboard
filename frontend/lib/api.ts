@@ -3,17 +3,18 @@ function resolveApiBase(): string {
   if (fromEnv) {
     return fromEnv;
   }
-
-  if (typeof window !== "undefined") {
-    const protocol = window.location.protocol === "https:" ? "https:" : "http:";
-    const host = window.location.hostname;
-    return `${protocol}//${host}:5001`;
-  }
-
-  return "http://127.0.0.1:5001";
+  return "";
 }
 
 export const API_BASE = resolveApiBase();
+export const API_LABEL = API_BASE ? API_BASE : "same-origin /api";
+
+function buildApiUrl(path: string): string {
+  if (!API_BASE) {
+    return `/api${path}`;
+  }
+  return `${API_BASE}${path}`;
+}
 
 export type Snapshot = {
   allowed_actions: string[];
@@ -58,7 +59,7 @@ export type Snapshot = {
 };
 
 export async function fetchSnapshot(): Promise<Snapshot> {
-  const url = `${API_BASE}/api/snapshot`;
+  const url = buildApiUrl("/snapshot");
   let resp: Response;
   try {
     resp = await fetch(url, { cache: "no-store" });
@@ -73,7 +74,7 @@ export async function fetchSnapshot(): Promise<Snapshot> {
 }
 
 export async function postAction(action: string, payload: Record<string, unknown>) {
-  const url = `${API_BASE}/api/actions/${action}`;
+  const url = buildApiUrl(`/actions/${action}`);
   let resp: Response;
   try {
     resp = await fetch(url, {
