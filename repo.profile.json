@@ -1,0 +1,10 @@
+{
+  "repo_id": "tmux-dushboard",
+  "package_manager": "unknown",
+  "doc_roots": [
+    "docs/L1_project",
+    "docs/L2_development",
+    "docs/L3_implementation"
+  ],
+  "commands": {}
+}
