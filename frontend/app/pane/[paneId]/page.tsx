@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   Alert,
   AppBar,
+  Avatar,
   Box,
   Button,
   Card,
@@ -12,6 +13,7 @@ import {
   Chip,
   Container,
   CssBaseline,
+  IconButton,
   Paper,
   Stack,
   TextField,
@@ -21,6 +23,7 @@ import {
   createTheme,
 } from "@mui/material";
 import TerminalIcon from "@mui/icons-material/Terminal";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { API_LABEL, fetchPaneDetail, fetchSession, fetchSnapshot, logout, postAction, type PaneDetail } from "../../../lib/api";
 
 const POLL_MS = 3000;
@@ -181,27 +184,34 @@ export default function PanePage() {
       <CssBaseline />
       <Box sx={{ minHeight: "100vh", pb: 6, background: "linear-gradient(180deg, #EDF5FF 0%, #F7F9FC 65%)" }}>
         <AppBar position="sticky" color="transparent" elevation={0} sx={{ backdropFilter: "blur(8px)", borderBottom: "1px solid #D8E2EE" }}>
-          <Toolbar sx={{ gap: 1 }}>
-            <TerminalIcon color="primary" />
-            <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
-              pane detail
-            </Typography>
-            <Chip size="small" color="primary" variant="outlined" label={`API: ${API_LABEL}`} />
-            {currentUser ? <Chip size="small" color="primary" label={currentUser} /> : null}
-            <Button size="small" variant="outlined" onClick={() => router.push("/")}>top</Button>
-            <Button size="small" variant="outlined" onClick={onLogout}>logout</Button>
-          </Toolbar>
+          <Container maxWidth="xl" sx={{ minWidth: 0 }}>
+            <Toolbar sx={{ gap: 1 }}>
+              <IconButton color="primary" onClick={() => router.push("/")} aria-label="go to top">
+                <TerminalIcon />
+              </IconButton>
+              <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
+                pane detail
+              </Typography>
+              {currentUser ? <Avatar sx={{ width: 30, height: 30, bgcolor: "primary.main", fontSize: 13 }}>{currentUser.slice(0, 1).toUpperCase()}</Avatar> : null}
+              <IconButton color="primary" onClick={onLogout} aria-label="logout">
+                <LogoutIcon />
+              </IconButton>
+            </Toolbar>
+          </Container>
         </AppBar>
 
-        <Container maxWidth="xl" sx={{ mt: 3 }}>
+        <Container maxWidth="xl" sx={{ mt: 3, minWidth: 0 }}>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
+            <Chip size="small" color="primary" variant="outlined" label={`API: ${API_LABEL}`} />
+          </Stack>
           {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
           {!detail ? (
             <Typography>loading...</Typography>
           ) : (
-            <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: "1fr" }}>
-              <Box>
-                <Card sx={{ mb: 2 }}>
+            <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: "1fr", minWidth: 0 }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Card sx={{ mb: 2, minWidth: 0 }}>
                   <CardContent>
                     <Typography variant="h6" sx={{ mb: 1 }}>Pane Info</Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
@@ -212,21 +222,37 @@ export default function PanePage() {
                       {detail.pane.active ? <Chip label="active" color="primary" /> : null}
                       <Chip label={`pid ${detail.pane.pid}`} />
                     </Stack>
-                    <Typography variant="body2">cmd: {detail.pane.current_command}</Typography>
-                    <Typography variant="body2">path: {detail.pane.current_path}</Typography>
-                    <Typography variant="body2">title: {detail.pane.title}</Typography>
-                    {detail.pane.process.command ? <Typography variant="body2">process: {detail.pane.process.command}</Typography> : null}
+                    <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>cmd: {detail.pane.current_command}</Typography>
+                    <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>path: {detail.pane.current_path}</Typography>
+                    <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>title: {detail.pane.title}</Typography>
+                    {detail.pane.process.command ? <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>process: {detail.pane.process.command}</Typography> : null}
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card sx={{ minWidth: 0 }}>
                   <CardContent>
                     <Typography variant="h6" sx={{ mb: 1 }}>Current Output</Typography>
-                    <Paper variant="outlined" sx={{ p: 1.5, fontFamily: "monospace", fontSize: 13, whiteSpace: "pre-wrap", maxHeight: 560, overflow: "auto", background: "#FCFDFF", mb: 2 }}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 1.5,
+                        minWidth: 0,
+                        fontFamily: "monospace",
+                        fontSize: 13,
+                        whiteSpace: "pre-wrap",
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                        maxHeight: 560,
+                        overflowX: "hidden",
+                        overflowY: "auto",
+                        background: "#FCFDFF",
+                        mb: 2,
+                      }}
+                    >
                       {detail.output || "(empty)"}
                     </Paper>
 
-                    <Typography variant="body2" sx={{ mb: 1.5 }}>
+                    <Typography variant="body2" sx={{ mb: 1.5, overflowWrap: "anywhere" }}>
                       target pane: <strong>{detail.pane.id}</strong>
                     </Typography>
 
