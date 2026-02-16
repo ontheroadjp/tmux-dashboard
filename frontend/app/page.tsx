@@ -29,7 +29,7 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 import HubIcon from "@mui/icons-material/Hub";
 import LanIcon from "@mui/icons-material/Lan";
 import BoltIcon from "@mui/icons-material/Bolt";
-import { API_LABEL, fetchSnapshot, postAction, type Snapshot } from "../lib/api";
+import { API_LABEL, fetchSession, fetchSnapshot, login, logout, postAction, type Snapshot } from "../lib/api";
 
 const POLL_MS = 3000;
 
@@ -66,6 +66,13 @@ export default function Page() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState<boolean>(false);
+  const [authReady, setAuthReady] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<string>("");
+  const [authBusy, setAuthBusy] = useState<boolean>(false);
+  const [loginUser, setLoginUser] = useState<string>("");
+  const [loginPass, setLoginPass] = useState<string>("");
+  const [loginError, setLoginError] = useState<string>("");
 
   const [targetPane, setTargetPane] = useState("");
   const [keys, setKeys] = useState("Enter");
@@ -80,15 +87,38 @@ export default function Page() {
       const data = await fetchSnapshot();
       setSnapshot(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "failed to fetch snapshot");
+      const message = e instanceof Error ? e.message : "failed to fetch snapshot";
+      if (message === "unauthorized") {
+        setIsAuthenticated(false);
+        setCurrentUser("");
+        setSnapshot(null);
+        return;
+      }
+      setError(message);
     }
   }
 
   useEffect(() => {
+    async function checkSession() {
+      try {
+        const session = await fetchSession();
+        setIsAuthenticated(session.authenticated);
+        setCurrentUser(session.user);
+      } finally {
+        setAuthReady(true);
+      }
+    }
+    checkSession();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
     load();
     const timer = window.setInterval(load, POLL_MS);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [isAuthenticated]);
 
   async function runAction(action: string, payload: Record<string, unknown>) {
     try {
@@ -97,7 +127,14 @@ export default function Page() {
       await postAction(action, payload);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "action failed");
+      const message = e instanceof Error ? e.message : "action failed";
+      if (message === "unauthorized") {
+        setIsAuthenticated(false);
+        setCurrentUser("");
+        setSnapshot(null);
+        return;
+      }
+      setError(message);
     } finally {
       setBusy(false);
     }
@@ -116,6 +153,35 @@ export default function Page() {
   function onSwitchSession(e: FormEvent) {
     e.preventDefault();
     runAction("switch_client", { target_session: targetSession });
+  }
+
+  async function onLogin(e: FormEvent) {
+    e.preventDefault();
+    if (!loginUser.trim() || !loginPass.trim()) {
+      setLoginError("ユーザー名とパスワードを入力してください。");
+      return;
+    }
+    try {
+      setAuthBusy(true);
+      setLoginError("");
+      const result = await login(loginUser.trim(), loginPass.trim());
+      setIsAuthenticated(true);
+      setCurrentUser(result.user);
+      setLoginPass("");
+      setSnapshot(null);
+      await load();
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : "login failed");
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  async function onLogout() {
+    await logout();
+    setIsAuthenticated(false);
+    setCurrentUser("");
+    setSnapshot(null);
   }
 
   const allowed = useMemo(() => new Set(snapshot?.allowed_actions ?? []), [snapshot?.allowed_actions]);
@@ -180,6 +246,59 @@ export default function Page() {
     }
   }, [sortedSessions, selectedSessionName, selectedWindowId]);
 
+  if (!authReady) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "linear-gradient(180deg, #EDF5FF 0%, #F7F9FC 65%)" }}>
+          <Typography>loading...</Typography>
+        </Box>
+      </ThemeProvider>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "linear-gradient(180deg, #EDF5FF 0%, #F7F9FC 65%)", p: 2 }}>
+          <Card sx={{ width: "100%", maxWidth: 420 }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                <TerminalIcon color="primary" />
+                <Typography variant="h6">tmux dashboard login</Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                ダッシュボードを表示するにはログインしてください。
+              </Typography>
+              {loginError ? <Alert severity="error" sx={{ mb: 1 }}>{loginError}</Alert> : null}
+              <Stack component="form" spacing={1.5} onSubmit={onLogin}>
+                <TextField
+                  size="small"
+                  label="user"
+                  autoComplete="username"
+                  value={loginUser}
+                  onChange={(e) => setLoginUser(e.target.value)}
+                />
+                <TextField
+                  size="small"
+                  label="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={loginPass}
+                  onChange={(e) => setLoginPass(e.target.value)}
+                />
+                <Button type="submit" variant="contained" disabled={authBusy}>
+                  {authBusy ? "logging in..." : "login"}
+                </Button>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -191,6 +310,10 @@ export default function Page() {
               tmux dashboard
             </Typography>
             <Chip size="small" color="primary" variant="outlined" label={`API: ${API_LABEL}`} />
+            {currentUser ? <Chip size="small" color="primary" label={currentUser} /> : null}
+            <Button size="small" variant="outlined" onClick={onLogout}>
+              logout
+            </Button>
           </Toolbar>
         </AppBar>
 
