@@ -77,6 +77,57 @@ def test_disabled_action_returns_403(monkeypatch):
     assert resp.get_json()["ok"] is False
 
 
+def test_pane_detail_requires_auth():
+    app = create_app()
+    client = app.test_client()
+
+    resp = client.get("/api/panes/%251")
+    assert resp.status_code == 401
+    assert resp.get_json()["ok"] is False
+
+
+def test_pane_detail_returns_404_when_not_found(monkeypatch):
+    monkeypatch.setattr("tmux_dashboard.app.collect_pane_detail", lambda pane_id: None)
+    app = create_app()
+    client = app.test_client()
+    token = _login_and_get_token(client)
+
+    resp = client.get("/api/panes/%251", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 404
+    assert resp.get_json()["ok"] is False
+
+
+def test_pane_detail_returns_detail(monkeypatch):
+    monkeypatch.setattr(
+        "tmux_dashboard.app.collect_pane_detail",
+        lambda pane_id: {
+            "session": {"name": "s0", "attached": True},
+            "window": {"id": "@1", "index": 0, "name": "w0", "active": True},
+            "pane": {
+                "id": pane_id,
+                "index": 1,
+                "active": True,
+                "pid": "123",
+                "current_command": "zsh",
+                "current_path": "/tmp",
+                "title": "pane-title",
+                "process": {"command": "zsh"},
+            },
+            "output": "line1\nline2\n",
+        },
+    )
+    app = create_app()
+    client = app.test_client()
+    token = _login_and_get_token(client)
+
+    resp = client.get("/api/panes/%251", headers={"Authorization": f"Bearer {token}"})
+    assert resp.status_code == 200
+    payload = resp.get_json()
+    assert payload["ok"] is True
+    assert payload["pane"]["id"] == "%1"
+    assert "line1" in payload["output"]
+
+
 def test_auth_secret_is_auto_generated_when_missing(monkeypatch):
     monkeypatch.delenv("DASHBOARD_AUTH_SECRET", raising=False)
     cfg = load_config()
