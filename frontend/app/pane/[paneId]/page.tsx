@@ -21,7 +21,6 @@ import {
   createTheme,
 } from "@mui/material";
 import TerminalIcon from "@mui/icons-material/Terminal";
-import BoltIcon from "@mui/icons-material/Bolt";
 import { API_LABEL, fetchPaneDetail, fetchSession, fetchSnapshot, logout, postAction, type PaneDetail } from "../../../lib/api";
 
 const POLL_MS = 3000;
@@ -133,6 +132,13 @@ export default function PanePage() {
     runAction("send_keys", { target_pane: detail.pane.id, keys });
   }
 
+  function onSendEnter() {
+    if (!detail) {
+      return;
+    }
+    runAction("send_keys", { target_pane: detail.pane.id, keys: "Enter" });
+  }
+
   async function onLogout() {
     await logout();
     setIsAuthenticated(false);
@@ -193,7 +199,7 @@ export default function PanePage() {
           {!detail ? (
             <Typography>loading...</Typography>
           ) : (
-            <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "2fr 1fr" } }}>
+            <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: "1fr" }}>
               <Box>
                 <Card sx={{ mb: 2 }}>
                   <CardContent>
@@ -216,38 +222,23 @@ export default function PanePage() {
                 <Card>
                   <CardContent>
                     <Typography variant="h6" sx={{ mb: 1 }}>Current Output</Typography>
-                    <Paper variant="outlined" sx={{ p: 1.5, fontFamily: "monospace", fontSize: 13, whiteSpace: "pre-wrap", maxHeight: 560, overflow: "auto", background: "#FCFDFF" }}>
+                    <Paper variant="outlined" sx={{ p: 1.5, fontFamily: "monospace", fontSize: 13, whiteSpace: "pre-wrap", maxHeight: 560, overflow: "auto", background: "#FCFDFF", mb: 2 }}>
                       {detail.output || "(empty)"}
                     </Paper>
-                  </CardContent>
-                </Card>
-              </Box>
-
-              <Box>
-                <Card>
-                  <CardContent>
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                      <BoltIcon color="secondary" />
-                      <Typography variant="h6">Actions</Typography>
-                    </Stack>
 
                     <Typography variant="body2" sx={{ mb: 1.5 }}>
                       target pane: <strong>{detail.pane.id}</strong>
                     </Typography>
 
-                    <Stack component="form" spacing={1} onSubmit={onSendKeys} sx={{ mb: 2 }}>
+                    <Stack component="form" direction={{ xs: "column", md: "row" }} spacing={1} onSubmit={onSendKeys}>
                       <TextField size="small" label="keys" value={keys} onChange={(e) => setKeys(e.target.value)} placeholder="Enter" />
-                      <Button type="submit" variant="contained" disabled={!allowed.has("send_keys") || busy}>send_keys</Button>
-                    </Stack>
-
-                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                      <Button size="small" variant="outlined" onClick={() => runAction("select_pane", { target_pane: detail.pane.id })} disabled={!allowed.has("select_pane") || busy}>select_pane</Button>
-                      <Button size="small" variant="outlined" onClick={() => runAction("split_window", { target_pane: detail.pane.id, direction: "vertical" })} disabled={!allowed.has("split_window") || busy}>split_window</Button>
-                      <Button size="small" variant="outlined" color="error" onClick={() => runAction("kill_pane", { target_pane: detail.pane.id })} disabled={!allowed.has("kill_pane") || busy}>kill_pane</Button>
+                      <Button type="submit" variant="contained" disabled={!allowed.has("send_keys") || busy}>send key</Button>
+                      <Button type="button" variant="outlined" disabled={!allowed.has("send_keys") || busy} onClick={onSendEnter}>send enter</Button>
                     </Stack>
                   </CardContent>
                 </Card>
               </Box>
+
             </Box>
           )}
         </Container>
