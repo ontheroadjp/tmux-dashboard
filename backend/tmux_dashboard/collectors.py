@@ -1,0 +1,185 @@
+from __future__ import annotations
+
+import shutil
+import subprocess
+from typing import Dict, List
+
+
+def _run_command(args: List[str]) -> str:
+    completed = subprocess.run(args, check=False, capture_output=True, text=True)
+    if completed.returncode != 0:
+        return ""
+    return completed.stdout.strip()
+
+
+def _ps_details(pid: str) -> Dict[str, str]:
+    if not pid or pid == "0":
+        return {}
+
+    out = _run_command(["ps", "-p", pid, "-o", "pid=,ppid=,user=,etime=,command="])
+    if not out:
+        return {}
+
+    parts = out.split(None, 4)
+    if len(parts) < 5:
+        return {}
+
+    return {
+        "pid": parts[0],
+        "ppid": parts[1],
+        "user": parts[2],
+        "elapsed": parts[3],
+        "command": parts[4],
+    }
+
+
+def collect_tmux_state() -> Dict[str, object]:
+    if shutil.which("tmux") is None:
+        return {
+            "available": False,
+            "running": False,
+            "sessions": [],
+            "error": "tmux command not found",
+        }
+
+    sessions_raw = _run_command(
+        ["tmux", "list-sessions", "-F", "#{session_id}\t#{session_name}\t#{session_windows}\t#{session_attached}"]
+    )
+    if not sessions_raw:
+        return {
+            "available": True,
+            "running": False,
+            "sessions": [],
+            "error": "no running tmux server",
+        }
+
+    windows_raw = _run_command(
+        [
+            "tmux",
+            "list-windows",
+            "-a",
+            "-F",
+            "#{session_name}\t#{window_id}\t#{window_index}\t#{window_name}\t#{window_active}\t#{window_panes}",
+        ]
+    )
+    panes_raw = _run_command(
+        [
+            "tmux",
+            "list-panes",
+            "-a",
+            "-F",
+            "#{session_name}\t#{window_id}\t#{pane_id}\t#{pane_index}\t#{pane_active}\t#{pane_pid}\t#{pane_current_command}\t#{pane_current_path}\t#{pane_title}",
+        ]
+    )
+
+    sessions: Dict[str, Dict[str, object]] = {}
+    for line in sessions_raw.splitlines():
+        parts = line.split("\t")
+        if len(parts) != 4:
+            continue
+        _, name, window_count, attached = parts
+        sessions[name] = {
+            "name": name,
+            "window_count": int(window_count),
+            "attached": attached == "1",
+            "windows": [],
+        }
+
+    windows: Dict[str, Dict[str, object]] = {}
+    for line in windows_raw.splitlines():
+        parts = line.split("\t")
+        if len(parts) != 6:
+            continue
+
+        session_name, window_id, window_index, window_name, window_active, pane_count = parts
+        window = {
+            "id": window_id,
+            "index": int(window_index),
+            "name": window_name,
+            "active": window_active == "1",
+            "pane_count": int(pane_count),
+            "panes": [],
+        }
+        windows[window_id] = window
+        if session_name in sessions:
+            sessions[session_name]["windows"].append(window)
+
+    for line in panes_raw.splitlines():
+        parts = line.split("\t")
+        if len(parts) != 9:
+            continue
+
+        _, window_id, pane_id, pane_index, pane_active, pane_pid, current_cmd, current_path, pane_title = parts
+        pane = {
+            "id": pane_id,
+            "index": int(pane_index),
+            "active": pane_active == "1",
+            "pid": pane_pid,
+            "current_command": current_cmd,
+            "current_path": current_path,
+            "title": pane_title,
+            "process": _ps_details(pane_pid),
+        }
+
+        window = windows.get(window_id)
+        if window:
+            window["panes"].append(pane)
+
+    return {
+        "available": True,
+        "running": True,
+        "sessions": sorted(sessions.values(), key=lambda item: item["name"]),
+        "error": "",
+    }
+
+
+def collect_network_state() -> Dict[str, object]:
+    listening: List[Dict[str, str]] = []
+    ssh_connections: List[Dict[str, str]] = []
+    ssh_tunnels: List[Dict[str, object]] = []
+
+    lsof_output = _run_command(["lsof", "-nP", "-iTCP", "-sTCP:LISTEN"])
+    for idx, line in enumerate(lsof_output.splitlines()):
+        if idx == 0:
+            continue
+        parts = line.split()
+        if len(parts) < 9:
+            continue
+        listening.append(
+            {
+                "command": parts[0],
+                "pid": parts[1],
+                "user": parts[2],
+                "address": parts[8],
+            }
+        )
+
+    ps_output = _run_command(["ps", "-axo", "pid=,ppid=,user=,command="])
+    for line in ps_output.splitlines():
+        parts = line.split(None, 3)
+        if len(parts) != 4:
+            continue
+
+        pid, ppid, user, command = parts
+        if "ssh" not in command:
+            continue
+
+        record = {"pid": pid, "ppid": ppid, "user": user, "command": command}
+        ssh_connections.append(record)
+
+        has_tunnel = any(flag in command for flag in (" -L ", " -R ", " -D ", " -W "))
+        if has_tunnel:
+            ssh_tunnels.append(
+                {
+                    "pid": pid,
+                    "user": user,
+                    "command": command,
+                    "kind": "tunnel",
+                }
+            )
+
+    return {
+        "listening_servers": listening,
+        "ssh_connections": ssh_connections,
+        "ssh_tunnels": ssh_tunnels,
+    }
