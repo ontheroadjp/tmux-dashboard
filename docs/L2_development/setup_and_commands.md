@@ -20,6 +20,8 @@
 ## 実行定義の根拠
 - frontend scripts: `dev/build/start`
   - 根拠: `frontend/package.json:5`
+- frontend UI dependencies: `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled`
+  - 根拠: `frontend/package.json:11`
 - backend 実行ポート `127.0.0.1:5001`
   - 根拠: `backend/run.py:6`
 - frontend 参照先 API 既定値 `http://127.0.0.1:5001`

@@ -21,7 +21,11 @@
 - 3秒ポーリングで snapshot 更新
   - 根拠: `frontend/app/page.tsx:6`
 - tmux/network/actions を1ページで表示
-  - 根拠: `frontend/app/page.tsx:84`
+  - 根拠: `frontend/app/page.tsx:129`
+- Material Design 3 ベースの UI（MUI theme + AppBar/Card/Chip/TextField/Button）で構成
+  - 根拠: `frontend/app/page.tsx:102`
+- 表示機能（snapshot）と操作機能（actions API 呼び出し）は維持
+  - 根拠: `frontend/app/page.tsx:75`
 
 ## 未確認事項
 - API 認証方式
