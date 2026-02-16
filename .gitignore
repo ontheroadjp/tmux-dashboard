@@ -1,2 +1,10 @@
 # macOS
 .DS_Store
+
+# Next.js
+frontend/node_modules/
+frontend/.next/
+
+# Python
+backend/__pycache__/
+backend/.pytest_cache/

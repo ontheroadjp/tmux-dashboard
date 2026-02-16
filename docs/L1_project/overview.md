@@ -1,20 +1,31 @@
 # Project Overview
 
 ## 目的
-この文書は、現時点のリポジトリ実体を根拠付きで固定化する。
+- tmux の session/window/pane 状態と pane プロセス状態を Web UI で確認し、tmux 操作を実行する。
+- ローカル待受サーバーと SSH 接続/トンネル状態を同一画面で確認する。
 
-## 現状（確定事項）
-- リポジトリルートには実装コードが存在しない。
-  - 根拠: `docs/L1_project/repository_inventory.md:4` から `docs/L1_project/repository_inventory.md:9`。
-- ドキュメント管理の基準点は `repo.profile.json` である。
-  - 根拠: `repo.profile.json:1` から `repo.profile.json:10`。
-- ドキュメントルートは `docs/L1_project` `docs/L2_development` `docs/L3_implementation` の3系統で運用する。
-  - 根拠: `repo.profile.json:4` から `repo.profile.json:8`。
+## 構成
+- `backend/`: Flask API。
+  - 根拠: `backend/tmux_dashboard/app.py:10`
+- `frontend/`: Next.js UI。
+  - 根拠: `frontend/package.json:6`
+
+## 現在の機能（実装済み）
+- tmux 状態取得（sessions/windows/panes）。
+  - 根拠: `backend/tmux_dashboard/collectors.py:36`
+- pane PID から `ps` でプロセス詳細を補完。
+  - 根拠: `backend/tmux_dashboard/collectors.py:15`
+- listening server / SSH 接続 / SSH トンネル候補の収集。
+  - 根拠: `backend/tmux_dashboard/collectors.py:136`
+- tmux 操作 API（send/select/kill/new/split）。
+  - 根拠: `backend/tmux_dashboard/actions.py:25`
+- 操作許可範囲の環境変数制御（`DASHBOARD_ALLOWED_ACTIONS`）。
+  - 根拠: `backend/tmux_dashboard/config.py:26`
 
 ## 未確認事項
-- 実装言語、ランタイム、主要エントリポイント。
-  - 確定できない理由: 実装ファイルが未作成。
-  - 次に確認するファイル: `package.json` `pyproject.toml` `go.mod` `src/main.*` `app/*`。
-- CI 定義。
-  - 確定できない理由: `.github/workflows/` が未作成。
-  - 次に確認するファイル: `.github/workflows/*.yml`。
+- 本番運用時の認証・認可要件。
+  - 確定できない理由: 認証実装が未存在。
+  - 次に確認するファイル: `backend/tmux_dashboard/app.py`
+- CI/CD 方針。
+  - 確定できない理由: `.github/workflows/` が未存在。
+  - 次に確認するファイル: `.github/workflows/*.yml`

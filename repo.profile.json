@@ -1,10 +1,18 @@
 {
-  "repo_id": "tmux-dushboard",
-  "package_manager": "unknown",
+  "repo_id": "ontheroadjp/tmux-dashboard",
+  "package_manager": "npm",
   "doc_roots": [
     "docs/L1_project",
     "docs/L2_development",
     "docs/L3_implementation"
   ],
-  "commands": {}
+  "commands": {
+    "backend_install": "python3 -m pip install -r backend/requirements.txt",
+    "backend_dev": "cd backend && python3 run.py",
+    "backend_test": "cd backend && pytest -q",
+    "frontend_install": "cd frontend && npm install",
+    "frontend_dev": "cd frontend && NEXT_PUBLIC_API_BASE=http://127.0.0.1:5001 npm run dev",
+    "frontend_build": "cd frontend && npm run build",
+    "frontend_start": "cd frontend && npm run start"
+  }
 }
