@@ -4,8 +4,9 @@
 
 ```bash
 cd backend
-python3 -m pip install -r requirements.txt
-python3 run.py
+python3 -m venv venv
+./venv/bin/pip install -r requirements.txt
+./venv/bin/python run.py
 ```
 
 Backend API endpoint: `http://127.0.0.1:5001`
@@ -30,5 +31,5 @@ Set `DASHBOARD_ALLOWED_ACTIONS` on backend startup.
 Example:
 
 ```bash
-DASHBOARD_ALLOWED_ACTIONS=send_keys,select_window python3 run.py
+DASHBOARD_ALLOWED_ACTIONS=send_keys,select_window ./venv/bin/python run.py
 ```
