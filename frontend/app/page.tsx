@@ -365,7 +365,13 @@ export default function Page() {
                               <Paper
                                 key={pane.id}
                                 variant="outlined"
-                                sx={{ p: 1, bgcolor: "#FFFFFF", cursor: "pointer", "&:hover": { borderColor: "primary.main" } }}
+                                sx={{
+                                  p: 1,
+                                  minWidth: 0,
+                                  bgcolor: "#FFFFFF",
+                                  cursor: "pointer",
+                                  "&:hover": { borderColor: "primary.main" },
+                                }}
                                 onClick={() => router.push(`/pane/${encodeURIComponent(pane.id)}`)}
                               >
                                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
@@ -374,10 +380,20 @@ export default function Page() {
                                   {pane.active ? <Chip size="small" color="primary" label="active" /> : null}
                                   <Chip size="small" label={`pid ${pane.pid}`} />
                                 </Stack>
-                                <Typography variant="body2">cmd: {pane.current_command}</Typography>
-                                <Typography variant="body2">path: {pane.current_path}</Typography>
-                                <Typography variant="body2">title: {pane.title}</Typography>
-                                {pane.process.command ? <Typography variant="body2">process: {pane.process.command}</Typography> : null}
+                                <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
+                                  cmd: {pane.current_command}
+                                </Typography>
+                                <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
+                                  path: {pane.current_path}
+                                </Typography>
+                                <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
+                                  title: {pane.title}
+                                </Typography>
+                                {pane.process.command ? (
+                                  <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
+                                    process: {pane.process.command}
+                                  </Typography>
+                                ) : null}
                               </Paper>
                             ))}
                           </Stack>
