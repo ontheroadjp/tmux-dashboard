@@ -63,6 +63,36 @@ export type AuthSession = {
   user: string;
 };
 
+export type PaneDetail = {
+  session: {
+    name: string;
+    attached: boolean;
+  };
+  window: {
+    id: string;
+    index: number;
+    name: string;
+    active: boolean;
+  };
+  pane: {
+    id: string;
+    index: number;
+    active: boolean;
+    pid: string;
+    current_command: string;
+    current_path: string;
+    title: string;
+    process: {
+      pid?: string;
+      ppid?: string;
+      user?: string;
+      elapsed?: string;
+      command?: string;
+    };
+  };
+  output: string;
+};
+
 export async function fetchSnapshot(): Promise<Snapshot> {
   const url = buildApiUrl("/snapshot");
   let resp: Response;
@@ -79,6 +109,31 @@ export async function fetchSnapshot(): Promise<Snapshot> {
     throw new Error(`snapshot request failed: ${resp.status} (${url})`);
   }
   return (await resp.json()) as Snapshot;
+}
+
+export async function fetchPaneDetail(paneId: string): Promise<PaneDetail> {
+  const encodedPaneId = encodeURIComponent(paneId);
+  const url = buildApiUrl(`/panes/${encodedPaneId}`);
+  let resp: Response;
+  try {
+    resp = await fetch(url, { cache: "no-store" });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "network error";
+    throw new Error(`pane detail request failed: ${msg} (${url})`);
+  }
+  if (!resp.ok) {
+    if (resp.status === 401) {
+      throw new Error("unauthorized");
+    }
+    throw new Error(`pane detail request failed: ${resp.status} (${url})`);
+  }
+  const json = (await resp.json()) as { ok: boolean } & PaneDetail;
+  return {
+    session: json.session,
+    window: json.window,
+    pane: json.pane,
+    output: json.output,
+  };
 }
 
 export async function postAction(action: string, payload: Record<string, unknown>) {

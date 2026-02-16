@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
 def _run_command(args: List[str]) -> str:
@@ -183,3 +183,53 @@ def collect_network_state() -> Dict[str, object]:
         "ssh_connections": ssh_connections,
         "ssh_tunnels": ssh_tunnels,
     }
+
+
+def _capture_pane_output(pane_id: str, lines: int = 200) -> str:
+    if not pane_id:
+        return ""
+
+    completed = subprocess.run(
+        ["tmux", "capture-pane", "-p", "-t", pane_id, "-S", f"-{max(lines, 1)}"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        return ""
+    return completed.stdout
+
+
+def collect_pane_detail(pane_id: str) -> Dict[str, Any] | None:
+    pane_id = pane_id.strip()
+    if not pane_id:
+        return None
+
+    tmux_state = collect_tmux_state()
+    if not tmux_state.get("running"):
+        return None
+
+    sessions = tmux_state.get("sessions", [])
+    for session in sessions:
+        windows = session.get("windows", [])
+        for window in windows:
+            panes = window.get("panes", [])
+            for pane in panes:
+                if pane.get("id") != pane_id:
+                    continue
+                return {
+                    "session": {
+                        "name": session.get("name", ""),
+                        "attached": bool(session.get("attached", False)),
+                    },
+                    "window": {
+                        "id": window.get("id", ""),
+                        "index": int(window.get("index", 0)),
+                        "name": window.get("name", ""),
+                        "active": bool(window.get("active", False)),
+                    },
+                    "pane": pane,
+                    "output": _capture_pane_output(pane_id),
+                }
+
+    return None
