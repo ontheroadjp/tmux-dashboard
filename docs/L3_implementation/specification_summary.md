@@ -13,8 +13,10 @@
   - 根拠: `backend/tmux_dashboard/app.py:76`
 - `GET /api/snapshot`: 認証済みのみ。tmux 状態 + network 状態 + allowed_actions
   - 根拠: `backend/tmux_dashboard/app.py:80`
+- `GET /api/panes/<pane_id>`: 認証済みのみ。pane メタ情報 + pane 現在出力を返す
+  - 根拠: `backend/tmux_dashboard/app.py:95`
 - `POST /api/actions/<action>`: 認証済みのみ action 実行
-  - 根拠: `backend/tmux_dashboard/app.py:93`
+  - 根拠: `backend/tmux_dashboard/app.py:106`
 
 ## action 実装範囲
 - `send_keys`, `select_pane`, `select_window`, `switch_client`
@@ -33,17 +35,23 @@
 - 3秒ポーリングで snapshot 更新
   - 根拠: `frontend/app/page.tsx:34`
 - tmux/network/actions を1ページで表示
-  - 根拠: `frontend/app/page.tsx:302`
+  - 根拠: `frontend/app/page.tsx:268`
 - Material Design 3 ベースの UI（MUI theme + AppBar/Card/Chip/TextField/Button）で構成
   - 根拠: `frontend/app/page.tsx:44`
 - 表示機能（snapshot）と操作機能（actions API 呼び出し）は維持
-  - 根拠: `frontend/app/page.tsx:120`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:112`
 - tmux セクションは「セッションカード一覧」をトップ表示とし、選択セッションのウインドウを Tabs で表示
-  - 根拠: `frontend/app/page.tsx:361`
+  - 根拠: `frontend/app/page.tsx:330`
 - 選択ウインドウ内で pane 情報を表示し、`pane No.{pane.index}` を表示
-  - 根拠: `frontend/app/page.tsx:413`
+  - 根拠: `frontend/app/page.tsx:382`
+- トップページは Actions セクションを表示せず、pane クリックで `/pane/[paneId]` に遷移する
+  - 根拠: `frontend/app/page.tsx:337`
+  - 根拠: `frontend/app/page.tsx:368`
+- pane 詳細ページは「pane情報 + 現在出力 + Actions」を表示し、Actions の対象は選択中 pane 固定
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:199`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:231`
 - 初期選択は「番号が最も若いセッション」「index が最小のウインドウ」
-  - 根拠: `frontend/app/page.tsx:190`
+  - 根拠: `frontend/app/page.tsx:153`
 
 ## 未確認事項
 - action ごとの安全制約（確認ダイアログ、監査ログ）
