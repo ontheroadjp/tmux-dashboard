@@ -5,6 +5,8 @@
   - 根拠: `backend/tmux_dashboard/app.py:44`
 - `POST /api/auth/login`: user/password で認証し Bearer token を発行
   - 根拠: `backend/tmux_dashboard/app.py:48`
+- `DASHBOARD_AUTH_SECRET` 未設定時は起動時にランダム生成された secret を署名鍵として利用
+  - 根拠: `backend/tmux_dashboard/config.py:39`
 - `GET /api/auth/session`: Bearer token を検証し認証済みユーザーを返す
   - 根拠: `backend/tmux_dashboard/app.py:68`
 - `POST /api/auth/logout`: フロント側ログアウト連携
