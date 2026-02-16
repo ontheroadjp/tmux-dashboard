@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Alert,
   AppBar,
+  Avatar,
   Box,
   Button,
   Card,
@@ -25,11 +26,13 @@ import {
   Toolbar,
   Typography,
   createTheme,
+  IconButton,
 } from "@mui/material";
 import TerminalIcon from "@mui/icons-material/Terminal";
 import HubIcon from "@mui/icons-material/Hub";
 import LanIcon from "@mui/icons-material/Lan";
 import BoltIcon from "@mui/icons-material/Bolt";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { API_LABEL, fetchSession, fetchSnapshot, login, logout, type Snapshot } from "../lib/api";
 
 const POLL_MS = 3000;
@@ -265,23 +268,29 @@ export default function Page() {
       <CssBaseline />
       <Box sx={{ minHeight: "100vh", pb: 6, background: "linear-gradient(180deg, #EDF5FF 0%, #F7F9FC 65%)" }}>
         <AppBar position="sticky" color="transparent" elevation={0} sx={{ backdropFilter: "blur(8px)", borderBottom: "1px solid #D8E2EE" }}>
-          <Toolbar sx={{ gap: 1 }}>
-            <TerminalIcon color="primary" />
-            <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
-              tmux dashboard
-            </Typography>
-            <Chip size="small" color="primary" variant="outlined" label={`API: ${API_LABEL}`} />
-            {currentUser ? <Chip size="small" color="primary" label={currentUser} /> : null}
-            <Button size="small" variant="outlined" onClick={onLogout}>
-              logout
-            </Button>
-          </Toolbar>
+          <Container maxWidth="xl" sx={{ minWidth: 0 }}>
+            <Toolbar sx={{ gap: 1 }}>
+              <IconButton color="primary" onClick={() => router.push("/")} aria-label="go to top">
+                <TerminalIcon />
+              </IconButton>
+              <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
+                tmux dashboard
+              </Typography>
+              {currentUser ? <Avatar sx={{ width: 30, height: 30, bgcolor: "primary.main", fontSize: 13 }}>{currentUser.slice(0, 1).toUpperCase()}</Avatar> : null}
+              <IconButton color="primary" onClick={onLogout} aria-label="logout">
+                <LogoutIcon />
+              </IconButton>
+            </Toolbar>
+          </Container>
         </AppBar>
 
-        <Container maxWidth="xl" sx={{ mt: 3 }}>
+        <Container maxWidth="xl" sx={{ mt: 3, minWidth: 0 }}>
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
+            <Chip size="small" color="primary" variant="outlined" label={`API: ${API_LABEL}`} />
+          </Stack>
           {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
-          <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "2fr 1fr" } }}>
+          <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "2fr 1fr" }, minWidth: 0 }}>
             <Box sx={{ gridColumn: { xs: "1 / -1", md: "1 / -1" } }}>
               <Card>
                 <CardContent>
@@ -298,7 +307,7 @@ export default function Page() {
               </Card>
             </Box>
 
-            <Box>
+            <Box sx={{ minWidth: 0 }}>
               <Card>
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
@@ -310,13 +319,19 @@ export default function Page() {
                   {snapshot?.tmux.running === false ? <Alert severity="info">{snapshot.tmux.error || "tmux server is not running"}</Alert> : null}
 
                   <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gap: 1,
+                        gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(auto-fill, minmax(180px, 1fr))" },
+                        minWidth: 0,
+                      }}
+                    >
                       {sortedSessions.map((session) => (
                         <Card
                           key={session.name}
                           variant={session.name === selectedSessionName ? "elevation" : "outlined"}
                           sx={{
-                            minWidth: 180,
                             cursor: "pointer",
                             borderColor: session.name === selectedSessionName ? "primary.main" : "divider",
                             bgcolor: session.name === selectedSessionName ? "#00639A" : "background.paper",
@@ -339,10 +354,10 @@ export default function Page() {
                           </CardContent>
                         </Card>
                       ))}
-                    </Stack>
+                    </Box>
 
                     {selectedSession ? (
-                      <Paper variant="outlined" sx={{ p: 1.25 }}>
+                      <Paper variant="outlined" sx={{ p: 1.25, minWidth: 0 }}>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
                           session: {selectedSession.name}
                         </Typography>
@@ -409,7 +424,7 @@ export default function Page() {
               </Card>
             </Box>
 
-            <Box>
+            <Box sx={{ minWidth: 0 }}>
               <Card sx={{ mb: 2 }}>
                 <CardContent>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
