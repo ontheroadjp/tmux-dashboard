@@ -1,18 +1,32 @@
 # Specification Summary
 
-## スコープ
-- 現時点では「tmux セッション監視ダッシュボード」の実装仕様は未確定。
-  - 根拠: `docs/L1_project/repository_inventory.md:4` から `docs/L1_project/repository_inventory.md:9`。
+## API 仕様
+- `GET /api/health`: `{ "ok": true }`
+  - 根拠: `backend/tmux_dashboard/app.py:21`
+- `GET /api/snapshot`: tmux 状態 + network 状態 + allowed_actions
+  - 根拠: `backend/tmux_dashboard/app.py:25`
+- `POST /api/actions/<action>`: action 実行
+  - 根拠: `backend/tmux_dashboard/app.py:35`
 
-## 確定している仕様
-- ドキュメントは3階層構成で管理する。
-  - 根拠: `repo.profile.json:4` から `repo.profile.json:8`。
-- コマンド定義は `repo.profile.json` を正本として管理する。
-  - 根拠: `repo.profile.json:9`。
+## action 実装範囲
+- `send_keys`, `select_pane`, `select_window`, `switch_client`
+- `kill_pane`, `kill_window`, `kill_session`
+- `new_window`, `split_window`
+
+根拠:
+- 実行分岐: `backend/tmux_dashboard/actions.py:25`
+- デフォルト許可一覧: `backend/tmux_dashboard/config.py:8`
+
+## UI 仕様（現状）
+- 3秒ポーリングで snapshot 更新
+  - 根拠: `frontend/app/page.tsx:6`
+- tmux/network/actions を1ページで表示
+  - 根拠: `frontend/app/page.tsx:84`
 
 ## 未確認事項
-- UI 要件（表示項目、更新頻度、認証要否）。
-- バックエンド要件（tmux 情報取得方式、公開 API、権限モデル）。
-- テスト要件（unit/integration/e2e の責務分割）。
-
-上記は実装と実行定義が追加された時点で再確定する。
+- API 認証方式
+  - 確定できない理由: 認証処理が未実装。
+  - 次に確認するファイル: `backend/tmux_dashboard/app.py`
+- action ごとの安全制約（確認ダイアログ、監査ログ）
+  - 確定できない理由: 実装が未存在。
+  - 次に確認するファイル: `frontend/app/page.tsx`, `backend/tmux_dashboard/app.py`
