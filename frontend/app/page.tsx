@@ -17,6 +17,8 @@ import {
   ListItemText,
   Paper,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   ThemeProvider,
   Toolbar,
@@ -30,6 +32,14 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import { API_BASE, fetchSnapshot, postAction, type Snapshot } from "../lib/api";
 
 const POLL_MS = 3000;
+
+function sessionOrder(name: string): [number, string] {
+  const m = name.match(/\d+/);
+  if (!m) {
+    return [Number.POSITIVE_INFINITY, name];
+  }
+  return [Number.parseInt(m[0], 10), name];
+}
 
 const theme = createTheme({
   palette: {
@@ -61,6 +71,8 @@ export default function Page() {
   const [keys, setKeys] = useState("Enter");
   const [targetWindow, setTargetWindow] = useState("");
   const [targetSession, setTargetSession] = useState("");
+  const [selectedSessionName, setSelectedSessionName] = useState("");
+  const [selectedWindowId, setSelectedWindowId] = useState("");
 
   async function load() {
     try {
@@ -107,6 +119,66 @@ export default function Page() {
   }
 
   const allowed = useMemo(() => new Set(snapshot?.allowed_actions ?? []), [snapshot?.allowed_actions]);
+  const sortedSessions = useMemo(() => {
+    const sessions = snapshot?.tmux.sessions ?? [];
+    return [...sessions].sort((a, b) => {
+      const [aNum, aName] = sessionOrder(a.name);
+      const [bNum, bName] = sessionOrder(b.name);
+      if (aNum !== bNum) {
+        return aNum - bNum;
+      }
+      return aName.localeCompare(bName);
+    });
+  }, [snapshot?.tmux.sessions]);
+
+  const selectedSession = useMemo(
+    () => sortedSessions.find((session) => session.name === selectedSessionName) ?? null,
+    [sortedSessions, selectedSessionName]
+  );
+
+  const sortedWindows = useMemo(() => {
+    const windows = selectedSession?.windows ?? [];
+    return [...windows].sort((a, b) => a.index - b.index);
+  }, [selectedSession]);
+
+  const selectedWindow = useMemo(
+    () => sortedWindows.find((window) => window.id === selectedWindowId) ?? null,
+    [sortedWindows, selectedWindowId]
+  );
+
+  useEffect(() => {
+    if (!sortedSessions.length) {
+      if (selectedSessionName) {
+        setSelectedSessionName("");
+      }
+      if (selectedWindowId) {
+        setSelectedWindowId("");
+      }
+      return;
+    }
+
+    const sessionExists = sortedSessions.some((session) => session.name === selectedSessionName);
+    const nextSessionName = sessionExists ? selectedSessionName : sortedSessions[0].name;
+    if (nextSessionName !== selectedSessionName) {
+      setSelectedSessionName(nextSessionName);
+    }
+
+    const currentSession = sortedSessions.find((session) => session.name === nextSessionName);
+    const windows = [...(currentSession?.windows ?? [])].sort((a, b) => a.index - b.index);
+
+    if (!windows.length) {
+      if (selectedWindowId) {
+        setSelectedWindowId("");
+      }
+      return;
+    }
+
+    const windowExists = windows.some((window) => window.id === selectedWindowId);
+    const nextWindowId = windowExists ? selectedWindowId : windows[0].id;
+    if (nextWindowId !== selectedWindowId) {
+      setSelectedWindowId(nextWindowId);
+    }
+  }, [sortedSessions, selectedSessionName, selectedWindowId]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -154,40 +226,79 @@ export default function Page() {
                   {snapshot?.tmux.running === false ? <Alert severity="info">{snapshot.tmux.error || "tmux server is not running"}</Alert> : null}
 
                   <Stack spacing={1.5} sx={{ mt: 1.5 }}>
-                    {snapshot?.tmux.sessions.map((session) => (
-                      <Paper key={session.name} variant="outlined" sx={{ p: 1.5 }}>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                          <Typography variant="subtitle1">{session.name}</Typography>
-                          {session.attached ? <Chip size="small" color="success" label="attached" /> : null}
-                        </Stack>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      {sortedSessions.map((session) => (
+                        <Card
+                          key={session.name}
+                          variant={session.name === selectedSessionName ? "elevation" : "outlined"}
+                          sx={{
+                            minWidth: 180,
+                            cursor: "pointer",
+                            borderColor: session.name === selectedSessionName ? "primary.main" : "divider",
+                            bgcolor: session.name === selectedSessionName ? "#00639A" : "background.paper",
+                            color: session.name === selectedSessionName ? "#FFFFFF" : "text.primary",
+                          }}
+                          onClick={() => {
+                            setSelectedSessionName(session.name);
+                            const minWindow = [...session.windows].sort((a, b) => a.index - b.index)[0];
+                            setSelectedWindowId(minWindow?.id ?? "");
+                          }}
+                        >
+                          <CardContent sx={{ pb: "16px !important" }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Typography variant="subtitle2">{session.name}</Typography>
+                              {session.attached ? <Chip size="small" color="success" label="attached" /> : null}
+                            </Stack>
+                            <Typography variant="body2" sx={{ mt: 0.5 }}>
+                              windows: {session.window_count}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </Stack>
 
-                        <Stack spacing={1}>
-                          {session.windows.map((window) => (
-                            <Paper key={window.id} variant="outlined" sx={{ p: 1.25, bgcolor: "#FAFBFD" }}>
-                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-                                <Typography variant="subtitle2">#{window.index} {window.name}</Typography>
-                                {window.active ? <Chip size="small" color="primary" label="active" /> : null}
-                              </Stack>
-                              <Stack spacing={0.75}>
-                                {window.panes.map((pane) => (
-                                  <Paper key={pane.id} variant="outlined" sx={{ p: 1, bgcolor: "#FFFFFF" }}>
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                                      <Typography variant="body2">pane {pane.id}</Typography>
-                                      {pane.active ? <Chip size="small" color="primary" label="active" /> : null}
-                                      <Chip size="small" label={`pid ${pane.pid}`} />
-                                    </Stack>
-                                    <Typography variant="body2">cmd: {pane.current_command}</Typography>
-                                    <Typography variant="body2">path: {pane.current_path}</Typography>
-                                    <Typography variant="body2">title: {pane.title}</Typography>
-                                    {pane.process.command ? <Typography variant="body2">process: {pane.process.command}</Typography> : null}
-                                  </Paper>
-                                ))}
-                              </Stack>
-                            </Paper>
+                    {selectedSession ? (
+                      <Paper variant="outlined" sx={{ p: 1.25 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                          session: {selectedSession.name}
+                        </Typography>
+
+                        <Tabs
+                          value={selectedWindowId || false}
+                          onChange={(_, value) => setSelectedWindowId(String(value))}
+                          variant="scrollable"
+                          scrollButtons="auto"
+                          sx={{ mb: 1 }}
+                        >
+                          {sortedWindows.map((window) => (
+                            <Tab key={window.id} value={window.id} label={`#${window.index} ${window.name}`} />
                           ))}
-                        </Stack>
+                        </Tabs>
+
+                        {selectedWindow ? (
+                          <Stack spacing={0.75}>
+                            {selectedWindow.panes.map((pane) => (
+                              <Paper key={pane.id} variant="outlined" sx={{ p: 1, bgcolor: "#FFFFFF" }}>
+                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                                  <Typography variant="body2">pane No.{pane.index}</Typography>
+                                  <Chip size="small" label={pane.id} />
+                                  {pane.active ? <Chip size="small" color="primary" label="active" /> : null}
+                                  <Chip size="small" label={`pid ${pane.pid}`} />
+                                </Stack>
+                                <Typography variant="body2">cmd: {pane.current_command}</Typography>
+                                <Typography variant="body2">path: {pane.current_path}</Typography>
+                                <Typography variant="body2">title: {pane.title}</Typography>
+                                {pane.process.command ? <Typography variant="body2">process: {pane.process.command}</Typography> : null}
+                              </Paper>
+                            ))}
+                          </Stack>
+                        ) : (
+                          <Typography variant="body2">window not selected</Typography>
+                        )}
                       </Paper>
-                    ))}
+                    ) : (
+                      <Typography variant="body2">session not selected</Typography>
+                    )}
                   </Stack>
                 </CardContent>
               </Card>
