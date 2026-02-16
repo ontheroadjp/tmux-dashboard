@@ -29,7 +29,7 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 import HubIcon from "@mui/icons-material/Hub";
 import LanIcon from "@mui/icons-material/Lan";
 import BoltIcon from "@mui/icons-material/Bolt";
-import { API_BASE, fetchSnapshot, postAction, type Snapshot } from "../lib/api";
+import { API_LABEL, fetchSnapshot, postAction, type Snapshot } from "../lib/api";
 
 const POLL_MS = 3000;
 
@@ -190,7 +190,7 @@ export default function Page() {
             <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
               tmux dashboard
             </Typography>
-            <Chip size="small" color="primary" variant="outlined" label={`API: ${API_BASE}`} />
+            <Chip size="small" color="primary" variant="outlined" label={`API: ${API_LABEL}`} />
           </Toolbar>
         </AppBar>
 
