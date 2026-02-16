@@ -7,8 +7,8 @@
   - 根拠: `backend/tests/test_app.py:13`
 
 ## テストコマンド
-- `backend_test`: `cd backend && pytest -q`
-  - 根拠: `repo.profile.json:11`
+- `backend_test`: `cd backend && ./venv/bin/pytest -q`
+  - 根拠: `repo.profile.json:13`
 
 ## 未確認事項
 - frontend 自動テスト（unit/e2e）

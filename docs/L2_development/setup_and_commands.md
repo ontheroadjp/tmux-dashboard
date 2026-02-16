@@ -6,9 +6,10 @@
 - tmux コマンド
 
 ## 契約コマンド（repo.profile.json）
-- `backend_install`: `python3 -m pip install -r backend/requirements.txt`
-- `backend_dev`: `cd backend && python3 run.py`
-- `backend_test`: `cd backend && pytest -q`
+- `backend_venv`: `cd backend && python3 -m venv venv`
+- `backend_install`: `cd backend && ./venv/bin/pip install -r requirements.txt`
+- `backend_dev`: `cd backend && ./venv/bin/python run.py`
+- `backend_test`: `cd backend && ./venv/bin/pytest -q`
 - `frontend_install`: `cd frontend && npm install`
 - `frontend_dev`: `cd frontend && NEXT_PUBLIC_API_BASE=http://127.0.0.1:5001 npm run dev`
 - `frontend_build`: `cd frontend && npm run build`
