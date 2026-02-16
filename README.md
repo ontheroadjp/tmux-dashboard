@@ -19,7 +19,7 @@ npm install
 NEXT_PUBLIC_API_BASE=http://127.0.0.1:5001 npm run dev
 ```
 
-Frontend endpoint: `http://127.0.0.1:3000`
+Frontend endpoint: `http://127.0.0.1:4000`
 
 ## Action Scope Configuration
 
