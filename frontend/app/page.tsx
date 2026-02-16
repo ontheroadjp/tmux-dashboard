@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Alert,
@@ -33,6 +33,23 @@ import HubIcon from "@mui/icons-material/Hub";
 import LanIcon from "@mui/icons-material/Lan";
 import BoltIcon from "@mui/icons-material/Bolt";
 import LogoutIcon from "@mui/icons-material/Logout";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
+import VpnLockIcon from "@mui/icons-material/VpnLock";
+import DnsIcon from "@mui/icons-material/Dns";
+
+function titleIcon(title?: string): ReactNode {
+  const normalized = (title ?? "").toLowerCase();
+  if (normalized.includes("codex") || normalized.includes("claude code") || normalized.includes("gemini")) {
+    return <SmartToyIcon fontSize="small" sx={{ color: "success.main" }} />;
+  }
+  if (normalized.includes("server") || normalized.includes("サーバー")) {
+    return <DnsIcon fontSize="small" sx={{ color: "primary.main" }} />;
+  }
+  if (normalized.includes("tunnel") || normalized.includes("ssh")) {
+    return <VpnLockIcon fontSize="small" sx={{ color: "secondary.main" }} />;
+  }
+  return <TerminalIcon fontSize="small" sx={{ color: "text.secondary" }} />;
+}
 import { API_LABEL, fetchSession, fetchSnapshot, login, logout, type Snapshot } from "../lib/api";
 
 const POLL_MS = 3000;
@@ -401,9 +418,10 @@ export default function Page() {
                                 <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
                                   path: {pane.current_path}
                                 </Typography>
-                                <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
-                                  title: {pane.title}
-                                </Typography>
+                                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ overflowWrap: "anywhere" }}>
+                                  {titleIcon(pane.title)}
+                                  <Typography variant="body2">title: {pane.title}</Typography>
+                                </Stack>
                                 {pane.process.command ? (
                                   <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
                                     process: {pane.process.command}

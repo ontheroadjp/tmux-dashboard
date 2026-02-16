@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Alert,
@@ -24,6 +24,9 @@ import {
 } from "@mui/material";
 import TerminalIcon from "@mui/icons-material/Terminal";
 import LogoutIcon from "@mui/icons-material/Logout";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
+import VpnLockIcon from "@mui/icons-material/VpnLock";
+import DnsIcon from "@mui/icons-material/Dns";
 import { API_LABEL, fetchPaneDetail, fetchSession, fetchSnapshot, logout, postAction, type PaneDetail } from "../../../lib/api";
 
 const POLL_MS = 3000;
@@ -47,6 +50,20 @@ const theme = createTheme({
     button: { textTransform: "none", fontWeight: 600 },
   },
 });
+
+function titleIcon(title?: string): ReactNode {
+  const normalized = (title ?? "").toLowerCase();
+  if (normalized.includes("codex") || normalized.includes("claude code") || normalized.includes("gemini")) {
+    return <SmartToyIcon fontSize="small" sx={{ color: "success.main" }} />;
+  }
+  if (normalized.includes("server") || normalized.includes("サーバー")) {
+    return <DnsIcon fontSize="small" sx={{ color: "primary.main" }} />;
+  }
+  if (normalized.includes("tunnel") || normalized.includes("ssh")) {
+    return <VpnLockIcon fontSize="small" sx={{ color: "secondary.main" }} />;
+  }
+  return <TerminalIcon fontSize="small" sx={{ color: "text.secondary" }} />;
+}
 
 export default function PanePage() {
   const params = useParams<{ paneId: string }>();
@@ -224,7 +241,10 @@ export default function PanePage() {
                     </Stack>
                     <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>cmd: {detail.pane.current_command}</Typography>
                     <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>path: {detail.pane.current_path}</Typography>
-                    <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>title: {detail.pane.title}</Typography>
+                    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ overflowWrap: "anywhere" }}>
+                      {titleIcon(detail.pane.title)}
+                      <Typography variant="body2">title: {detail.pane.title}</Typography>
+                    </Stack>
                     {detail.pane.process.command ? <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>process: {detail.pane.process.command}</Typography> : null}
                   </CardContent>
                 </Card>
