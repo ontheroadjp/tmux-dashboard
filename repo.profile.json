@@ -12,7 +12,7 @@
     "backend_dev": "cd backend && ./venv/bin/python run.py",
     "backend_test": "cd backend && ./venv/bin/pytest -q",
     "frontend_install": "cd frontend && npm install",
-    "frontend_dev": "cd frontend && NEXT_PUBLIC_API_BASE=http://127.0.0.1:5001 npm run dev",
+    "frontend_dev": "cd frontend && npm run dev",
     "frontend_build": "cd frontend && npm run build",
     "frontend_start": "cd frontend && npm run start"
   }

@@ -16,10 +16,14 @@ Backend API endpoint: `http://127.0.0.1:5001`
 ```bash
 cd frontend
 npm install
-NEXT_PUBLIC_API_BASE=http://127.0.0.1:5001 npm run dev
+npm run dev
 ```
 
 Frontend endpoint: `http://127.0.0.1:4000`
+
+Default API resolution:
+- `NEXT_PUBLIC_API_BASE` is set: use that value
+- not set: use `http(s)://<current-host>:5001`
 
 ## Action Scope Configuration
 
