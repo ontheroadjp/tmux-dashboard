@@ -68,6 +68,7 @@
   - `keys` 入力欄の初期値は空文字
   - `send key` は `keys` が空欄のとき `send_keys(keys=["C-u"])` を送って tmux プロンプト入力行をクリアする
   - `send key` は `keys` 入力時に `send_keys(keys=["-l", <keys>])` を送って文字列をリテラル送信する
+  - backend は `keys=["-l", <keys>]` を `tmux send-keys -l -t <pane> <keys>` として実行する
   - `clear` は tmux には送信せず、`keys` 入力欄を空にする
   - keys 入力欄は multiline（3行）で、入力中フォーカス時はポーリング更新を抑止する
   - Actions レイアウトは「1段目: keys入力欄（multiline）、2段目: 2:1 幅の send key/clear、3段目: send enter」
@@ -82,6 +83,10 @@
 - API 表示（`API: ${API_LABEL}`）は pane 詳細ページではヘッダー内に表示する
   - 根拠: `frontend/app/page.tsx:288`
   - 根拠: `frontend/app/pane/[paneId]/page.tsx:270`
+- actions API エラー表示は backend の `stderr` を優先して表示する
+  - 根拠: `frontend/lib/api.ts:153`
+- `send_keys` の `-l` リテラル送信分岐と `target_pane` 必須は単体テストで検証される
+  - 根拠: `backend/tests/test_actions.py:4`
 - スマホ表示での横幅変動を抑えるため、主要コンテナに `minWidth: 0` とテキスト折り返し制御を適用
   - 根拠: `frontend/app/page.tsx:287`
   - 根拠: `frontend/app/page.tsx:360`
