@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Alert,
@@ -78,6 +78,8 @@ export default function PanePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [keys, setKeys] = useState("Enter");
+  const [isKeysFocused, setIsKeysFocused] = useState(false);
+  const keysInputRef = useRef<HTMLInputElement | null>(null);
 
   const allowed = useMemo(() => new Set(allowedActions), [allowedActions]);
 
@@ -121,9 +123,13 @@ export default function PanePage() {
       return;
     }
     load();
-    const timer = window.setInterval(load, POLL_MS);
+    const timer = window.setInterval(() => {
+      if (!isKeysFocused) {
+        load();
+      }
+    }, POLL_MS);
     return () => window.clearInterval(timer);
-  }, [isAuthenticated, paneIdParam]);
+  }, [isAuthenticated, paneIdParam, isKeysFocused]);
 
   async function runAction(action: string, payload: Record<string, unknown>) {
     try {
@@ -284,7 +290,27 @@ export default function PanePage() {
                     </Typography>
 
                     <Stack component="form" direction="column" spacing={1} onSubmit={onSendKeys}>
-                      <TextField size="small" label="keys" value={keys} onChange={(e) => setKeys(e.target.value)} placeholder="Enter" />
+                      <TextField
+                        size="small"
+                        label="keys"
+                        multiline
+                        minRows={3}
+                        value={keys}
+                        onChange={(e) => setKeys(e.target.value)}
+                        onFocus={() => setIsKeysFocused(true)}
+                        onBlur={() => setIsKeysFocused(false)}
+                        inputRef={keysInputRef}
+                        slotProps={{
+                          htmlInput: {
+                            autoCapitalize: "none",
+                            autoCorrect: "off",
+                            autoComplete: "off",
+                            spellCheck: false,
+                          },
+                        }}
+                        fullWidth
+                        placeholder="Enter"
+                      />
                       <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 1 }}>
                         <Button type="submit" variant="contained" fullWidth disabled={!allowed.has("send_keys") || busy}>send key</Button>
                         <Button type="button" variant="contained" color="error" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onClearPrompt}>clear</Button>
