@@ -40,7 +40,7 @@
   - 根拠: `frontend/app/api/panes/[paneId]/route.ts:1`
   - 根拠: `backend/tmux_dashboard/app.py:95`
 - backend 中継先は `BACKEND_API_BASE` 優先、未指定時 `http://127.0.0.1:5001`
-  - 根拠: `frontend/app/api/snapshot/route.ts:3`
+  - 根拠: `frontend/app/api/_shared.ts:3`
 - frontend 実行ポート `4000`（dev/start ともに固定）
   - 根拠: `frontend/package.json:5`
 
