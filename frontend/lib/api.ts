@@ -150,12 +150,18 @@ export async function postAction(action: string, payload: Record<string, unknown
     throw new Error(`action request failed: ${msg} (${url})`);
   }
 
-  const json = await resp.json();
+  const json = (await resp.json().catch(() => ({}))) as {
+    error?: string;
+    stderr?: string;
+    stdout?: string;
+    returncode?: number;
+  };
   if (!resp.ok) {
     if (resp.status === 401) {
       throw new Error("unauthorized");
     }
-    throw new Error(json.error ?? `action failed: ${resp.status} (${url})`);
+    const detail = json.stderr || json.error || json.stdout;
+    throw new Error(detail ?? `action failed: ${resp.status} (${url})`);
   }
   return json;
 }
