@@ -159,6 +159,13 @@ export default function PanePage() {
     runAction("send_keys", { target_pane: detail.pane.id, keys: "Enter" });
   }
 
+  function onClearPrompt() {
+    if (!detail) {
+      return;
+    }
+    runAction("send_keys", { target_pane: detail.pane.id, keys: "C-u" });
+  }
+
   async function onLogout() {
     await logout();
     setIsAuthenticated(false);
@@ -276,10 +283,13 @@ export default function PanePage() {
                       target pane: <strong>{detail.pane.id}</strong>
                     </Typography>
 
-                    <Stack component="form" direction={{ xs: "column", md: "row" }} spacing={1} onSubmit={onSendKeys}>
+                    <Stack component="form" direction="column" spacing={1} onSubmit={onSendKeys}>
                       <TextField size="small" label="keys" value={keys} onChange={(e) => setKeys(e.target.value)} placeholder="Enter" />
-                      <Button type="submit" variant="contained" disabled={!allowed.has("send_keys") || busy}>send key</Button>
-                      <Button type="button" variant="outlined" disabled={!allowed.has("send_keys") || busy} onClick={onSendEnter}>send enter</Button>
+                      <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 1 }}>
+                        <Button type="submit" variant="contained" fullWidth disabled={!allowed.has("send_keys") || busy}>send key</Button>
+                        <Button type="button" variant="contained" color="error" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onClearPrompt}>clear</Button>
+                      </Box>
+                      <Button type="button" variant="outlined" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onSendEnter}>send enter</Button>
                     </Stack>
                   </CardContent>
                 </Card>
