@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Alert,
@@ -20,50 +20,14 @@ import {
   ThemeProvider,
   Toolbar,
   Typography,
-  createTheme,
 } from "@mui/material";
 import TerminalIcon from "@mui/icons-material/Terminal";
 import LogoutIcon from "@mui/icons-material/Logout";
-import SmartToyIcon from "@mui/icons-material/SmartToy";
-import VpnLockIcon from "@mui/icons-material/VpnLock";
-import DnsIcon from "@mui/icons-material/Dns";
 import { API_LABEL, fetchPaneDetail, fetchSession, fetchSnapshot, logout, postAction, type PaneDetail } from "../../../lib/api";
+import { dashboardTheme } from "../../../lib/theme";
+import { titleIcon } from "../../../lib/titleIcon";
 
 const POLL_MS = 3000;
-
-const theme = createTheme({
-  palette: {
-    mode: "light",
-    primary: { main: "#00639A" },
-    secondary: { main: "#6D5E0F" },
-    error: { main: "#B3261E" },
-    background: {
-      default: "#F7F9FC",
-      paper: "#FFFFFF",
-    },
-  },
-  shape: { borderRadius: 14 },
-  typography: {
-    fontFamily: '"Roboto", "Noto Sans JP", sans-serif',
-    h6: { fontWeight: 700 },
-    subtitle2: { fontWeight: 600 },
-    button: { textTransform: "none", fontWeight: 600 },
-  },
-});
-
-function titleIcon(title?: string): ReactNode {
-  const normalized = (title ?? "").toLowerCase();
-  if (normalized.includes("codex") || normalized.includes("claude code") || normalized.includes("gemini")) {
-    return <SmartToyIcon fontSize="small" sx={{ color: "success.main" }} />;
-  }
-  if (normalized.includes("server") || normalized.includes("サーバー")) {
-    return <DnsIcon fontSize="small" sx={{ color: "primary.main" }} />;
-  }
-  if (normalized.includes("tunnel") || normalized.includes("ssh")) {
-    return <VpnLockIcon fontSize="small" sx={{ color: "secondary.main" }} />;
-  }
-  return <TerminalIcon fontSize="small" sx={{ color: "text.secondary" }} />;
-}
 
 export default function PanePage() {
   const params = useParams<{ paneId: string }>();
@@ -179,7 +143,7 @@ export default function PanePage() {
 
   if (!authReady) {
     return (
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={dashboardTheme}>
         <CssBaseline />
         <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "linear-gradient(180deg, #EDF5FF 0%, #F7F9FC 65%)" }}>
           <Typography>loading...</Typography>
@@ -190,7 +154,7 @@ export default function PanePage() {
 
   if (!isAuthenticated) {
     return (
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={dashboardTheme}>
         <CssBaseline />
         <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "linear-gradient(180deg, #EDF5FF 0%, #F7F9FC 65%)", p: 2 }}>
           <Card sx={{ width: "100%", maxWidth: 460 }}>
@@ -208,7 +172,7 @@ export default function PanePage() {
   }
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={dashboardTheme}>
       <CssBaseline />
       <Box sx={{ minHeight: "100vh", pb: 6, background: "linear-gradient(180deg, #EDF5FF 0%, #F7F9FC 65%)" }}>
         <AppBar position="sticky" color="transparent" elevation={0} sx={{ backdropFilter: "blur(8px)", borderBottom: "1px solid #D8E2EE" }}>
