@@ -3,6 +3,9 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   AppBar,
   Avatar,
@@ -16,11 +19,14 @@ import {
   IconButton,
   Paper,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   ThemeProvider,
   Toolbar,
   Typography,
 } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import TerminalIcon from "@mui/icons-material/Terminal";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { API_LABEL, fetchPaneDetail, fetchSession, fetchSnapshot, logout, postAction, type PaneDetail } from "../../../lib/api";
@@ -28,6 +34,8 @@ import { dashboardTheme } from "../../../lib/theme";
 import { titleIcon } from "../../../lib/titleIcon";
 
 const POLL_MS = 3000;
+
+type PaneTab = PaneDetail["pane"];
 
 export default function PanePage() {
   const params = useParams<{ paneId: string }>();
@@ -38,26 +46,40 @@ export default function PanePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState("");
   const [detail, setDetail] = useState<PaneDetail | null>(null);
+  const [windowPanes, setWindowPanes] = useState<PaneTab[]>([]);
+  const [activePaneId, setActivePaneId] = useState("");
+  const [windowTitle, setWindowTitle] = useState("pane detail");
   const [allowedActions, setAllowedActions] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [keys, setKeys] = useState("");
   const [isKeysFocused, setIsKeysFocused] = useState(false);
-  const keysInputRef = useRef<HTMLInputElement | null>(null);
+  const [paneInfoExpanded, setPaneInfoExpanded] = useState(true);
+  const keysInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const allowed = useMemo(() => new Set(allowedActions), [allowedActions]);
 
-  async function load() {
-    if (!paneIdParam) {
+  async function load(targetPaneId: string) {
+    if (!targetPaneId) {
       setError("paneId is required");
       return;
     }
 
     try {
       setError("");
-      const [paneDetail, snapshot] = await Promise.all([fetchPaneDetail(paneIdParam), fetchSnapshot()]);
+      const [paneDetail, snapshot] = await Promise.all([fetchPaneDetail(targetPaneId), fetchSnapshot()]);
       setDetail(paneDetail);
+      setWindowTitle(paneDetail.window.name || "pane detail");
       setAllowedActions(snapshot.allowed_actions);
+
+      const session = snapshot.tmux.sessions.find((item) => item.name === paneDetail.session.name);
+      const window = session?.windows.find((item) => item.id === paneDetail.window.id);
+      const panes = (window?.panes ?? [paneDetail.pane]) as PaneTab[];
+      setWindowPanes(panes);
+
+      if (!panes.some((pane) => pane.id === targetPaneId)) {
+        setActivePaneId(panes[0]?.id ?? targetPaneId);
+      }
     } catch (e) {
       const message = e instanceof Error ? e.message : "failed to load pane";
       if (message === "unauthorized") {
@@ -68,6 +90,10 @@ export default function PanePage() {
       setError(message);
     }
   }
+
+  useEffect(() => {
+    setActivePaneId(paneIdParam);
+  }, [paneIdParam]);
 
   useEffect(() => {
     async function checkSession() {
@@ -86,21 +112,44 @@ export default function PanePage() {
     if (!isAuthenticated) {
       return;
     }
-    load();
+
+    const targetPaneId = activePaneId || paneIdParam;
+    if (!targetPaneId) {
+      return;
+    }
+
+    void load(targetPaneId);
     const timer = window.setInterval(() => {
       if (!isKeysFocused) {
-        load();
+        void load(targetPaneId);
       }
     }, POLL_MS);
+
     return () => window.clearInterval(timer);
-  }, [isAuthenticated, paneIdParam, isKeysFocused]);
+  }, [isAuthenticated, activePaneId, paneIdParam, isKeysFocused]);
 
   async function runAction(action: string, payload: Record<string, unknown>) {
+    const resolvedTargetPaneId = String(
+      payload.target_pane ?? (activePaneId || detail?.pane.id || paneIdParam || "")
+    ).trim();
+    const normalizedPayload =
+      action === "send_keys"
+        ? { ...payload, target_pane: resolvedTargetPaneId }
+        : payload;
+
+    if (action === "send_keys" && !resolvedTargetPaneId) {
+      setError("target pane is unavailable");
+      return;
+    }
+
     try {
       setBusy(true);
       setError("");
-      await postAction(action, payload);
-      await load();
+      await postAction(action, normalizedPayload);
+      const rawTargetPaneId =
+        normalizedPayload.target_pane ?? (activePaneId || detail?.pane.id || paneIdParam);
+      const targetPaneId = String(rawTargetPaneId);
+      await load(targetPaneId);
     } catch (e) {
       const message = e instanceof Error ? e.message : "action failed";
       if (message === "unauthorized") {
@@ -116,18 +165,25 @@ export default function PanePage() {
 
   function onSendKeys(e: FormEvent) {
     e.preventDefault();
-    if (!detail) {
+    const targetPaneId = activePaneId || detail?.pane.id || paneIdParam;
+    if (!targetPaneId) {
       return;
     }
-    const payloadKeys = keys.trim() === "" ? "C-u" : keys;
-    runAction("send_keys", { target_pane: detail.pane.id, keys: payloadKeys });
+
+    const payloadKeys =
+      keys.trim() === ""
+        ? ["C-u"]
+        : ["-l", keys];
+    void runAction("send_keys", { target_pane: targetPaneId, keys: payloadKeys });
   }
 
   function onSendEnter() {
-    if (!detail) {
+    const targetPaneId = activePaneId || detail?.pane.id || paneIdParam;
+    if (!targetPaneId) {
       return;
     }
-    runAction("send_keys", { target_pane: detail.pane.id, keys: "Enter" });
+
+    void runAction("send_keys", { target_pane: targetPaneId, keys: ["Enter"] });
   }
 
   function onClearPrompt() {
@@ -139,6 +195,20 @@ export default function PanePage() {
     setIsAuthenticated(false);
     setCurrentUser("");
     router.push("/");
+  }
+
+  const tabs = useMemo(() => {
+    if (windowPanes.length > 0) {
+      return windowPanes;
+    }
+    return detail ? [detail.pane] : [];
+  }, [windowPanes, detail]);
+
+  const targetPaneId = activePaneId || detail?.pane.id || paneIdParam;
+
+  function handlePaneTabChange(nextPaneId: string) {
+    setActivePaneId(nextPaneId);
+    void load(nextPaneId);
   }
 
   if (!authReady) {
@@ -175,15 +245,21 @@ export default function PanePage() {
     <ThemeProvider theme={dashboardTheme}>
       <CssBaseline />
       <Box sx={{ minHeight: "100vh", pb: 6, background: "linear-gradient(180deg, #EDF5FF 0%, #F7F9FC 65%)" }}>
-        <AppBar position="sticky" color="transparent" elevation={0} sx={{ backdropFilter: "blur(8px)", borderBottom: "1px solid #D8E2EE" }}>
+        <AppBar
+          position="static"
+          color="transparent"
+          elevation={0}
+          sx={{ borderBottom: "1px solid #D8E2EE", backgroundColor: "#edf5ff" }}
+        >
           <Container maxWidth="xl" sx={{ minWidth: 0 }}>
             <Toolbar sx={{ gap: 1 }}>
               <IconButton color="primary" onClick={() => router.push("/")} aria-label="go to top">
                 <TerminalIcon />
               </IconButton>
               <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
-                pane detail
+                {windowTitle}
               </Typography>
+              <Chip size="small" color="primary" variant="outlined" label={`API: ${API_LABEL}`} />
               {currentUser ? <Avatar sx={{ width: 30, height: 30, bgcolor: "primary.main", fontSize: 13 }}>{currentUser.slice(0, 1).toUpperCase()}</Avatar> : null}
               <IconButton color="primary" onClick={onLogout} aria-label="logout">
                 <LogoutIcon />
@@ -192,20 +268,64 @@ export default function PanePage() {
           </Container>
         </AppBar>
 
-        <Container maxWidth="xl" sx={{ mt: 3, minWidth: 0 }}>
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
-            <Chip size="small" color="primary" variant="outlined" label={`API: ${API_LABEL}`} />
-          </Stack>
+        <Container maxWidth="xl" sx={{ mt: 0, minWidth: 0 }}>
           {error ? <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert> : null}
 
           {!detail ? (
             <Typography>loading...</Typography>
           ) : (
-            <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: "1fr", minWidth: 0 }}>
-              <Box sx={{ minWidth: 0 }}>
-                <Card sx={{ mb: 2, minWidth: 0 }}>
-                  <CardContent>
-                    <Typography variant="h6" sx={{ mb: 1 }}>Pane Info</Typography>
+            <>
+              <Box
+                sx={{
+                  position: "sticky",
+                  top: 0,
+                  zIndex: (theme) => theme.zIndex.appBar,
+                  mt: 0,
+                  mb: 2,
+                  backgroundColor: "#edf5ff",
+                }}
+              >
+                <Tabs
+                  value={activePaneId || false}
+                  onChange={(_, value) => handlePaneTabChange(String(value))}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  sx={{ px: 1, borderBottom: "1px solid #D8E2EE" }}
+                >
+                  {tabs.map((pane) => {
+                    const isActive = pane.id === (activePaneId || detail.pane.id);
+                    return (
+                      <Tab
+                        key={pane.id}
+                        value={pane.id}
+                        icon={titleIcon(pane.title, { active: isActive })}
+                        iconPosition="start"
+                        label={pane.title || pane.id}
+                        sx={{ textTransform: "none" }}
+                      />
+                    );
+                  })}
+                </Tabs>
+              </Box>
+
+              <Card sx={{ minWidth: 0 }}>
+              <CardContent>
+                <Accordion
+                  expanded={paneInfoExpanded}
+                  onChange={(_, expanded) => setPaneInfoExpanded(expanded)}
+                  disableGutters
+                  sx={{
+                    mb: 2,
+                    boxShadow: "none",
+                    border: "none",
+                    background: "transparent",
+                    "&:before": { display: "none" },
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="h6">Pane Info</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
                       <Chip label={`session ${detail.session.name}`} />
                       <Chip label={`window #${detail.window.index} ${detail.window.name}`} />
@@ -221,69 +341,65 @@ export default function PanePage() {
                       <Typography variant="body2">title: {detail.pane.title}</Typography>
                     </Stack>
                     {detail.pane.process.command ? <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>process: {detail.pane.process.command}</Typography> : null}
-                  </CardContent>
-                </Card>
+                  </AccordionDetails>
+                </Accordion>
 
-                <Card sx={{ minWidth: 0 }}>
-                  <CardContent>
-                    <Typography variant="h6" sx={{ mb: 1 }}>Current Output</Typography>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 1.5,
-                        minWidth: 0,
-                        fontFamily: "monospace",
-                        fontSize: 13,
-                        whiteSpace: "pre-wrap",
-                        overflowWrap: "anywhere",
-                        wordBreak: "break-word",
-                        maxHeight: 560,
-                        overflowX: "hidden",
-                        overflowY: "auto",
-                        background: "#FCFDFF",
-                        mb: 2,
-                      }}
-                    >
-                      {detail.output || "(empty)"}
-                    </Paper>
+                <Typography variant="h6" sx={{ mb: 1 }}>Current Output</Typography>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    minWidth: 0,
+                    fontFamily: "monospace",
+                    fontSize: 13,
+                    whiteSpace: "pre-wrap",
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                    maxHeight: 560,
+                    overflowX: "hidden",
+                    overflowY: "auto",
+                    background: "#FCFDFF",
+                    mb: 2,
+                  }}
+                >
+                  {detail.output || "(empty)"}
+                </Paper>
 
-                    <Typography variant="body2" sx={{ mb: 1.5, overflowWrap: "anywhere" }}>
-                      target pane: <strong>{detail.pane.id}</strong>
-                    </Typography>
+                <Typography variant="body2" sx={{ mb: 1.5, overflowWrap: "anywhere" }}>
+                  target pane: <strong>{targetPaneId}</strong>
+                </Typography>
 
-                    <Stack component="form" direction="column" spacing={1} onSubmit={onSendKeys}>
-                      <TextField
-                        size="small"
-                        label="keys"
-                        multiline
-                        minRows={3}
-                        value={keys}
-                        onChange={(e) => setKeys(e.target.value)}
-                        onFocus={() => setIsKeysFocused(true)}
-                        onBlur={() => setIsKeysFocused(false)}
-                        inputRef={keysInputRef}
-                        slotProps={{
-                          htmlInput: {
-                            autoCapitalize: "none",
-                            autoCorrect: "off",
-                            autoComplete: "off",
-                            spellCheck: false,
-                          },
-                        }}
-                        fullWidth
-                        placeholder="Enter"
-                      />
-                      <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 1 }}>
-                        <Button type="submit" variant="contained" fullWidth disabled={!allowed.has("send_keys") || busy}>send key</Button>
-                        <Button type="button" variant="contained" color="error" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onClearPrompt}>clear</Button>
-                      </Box>
-                      <Button type="button" variant="outlined" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onSendEnter}>send enter</Button>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Box>
-
-            </Box>
+                <Stack component="form" direction="column" spacing={1} onSubmit={onSendKeys}>
+                  <TextField
+                    size="small"
+                    label="keys"
+                    multiline
+                    minRows={3}
+                    value={keys}
+                    onChange={(e) => setKeys(e.target.value)}
+                    onFocus={() => setIsKeysFocused(true)}
+                    onBlur={() => setIsKeysFocused(false)}
+                    inputRef={keysInputRef}
+                    slotProps={{
+                      htmlInput: {
+                        autoCapitalize: "none",
+                        autoCorrect: "off",
+                        autoComplete: "off",
+                        spellCheck: false,
+                      },
+                    }}
+                    fullWidth
+                    placeholder="Enter"
+                  />
+                  <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 1 }}>
+                    <Button type="submit" variant="contained" fullWidth disabled={!allowed.has("send_keys") || busy}>send key</Button>
+                    <Button type="button" variant="contained" color="error" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onClearPrompt}>clear</Button>
+                  </Box>
+                  <Button type="button" variant="outlined" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onSendEnter}>send enter</Button>
+                </Stack>
+                </CardContent>
+              </Card>
+            </>
           )}
         </Container>
       </Box>
