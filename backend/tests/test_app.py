@@ -29,7 +29,7 @@ def test_auth_login_invalid_credentials():
     assert resp.get_json()["ok"] is False
 
 
-def _login_and_get_token(client, user: str = "admin", password: str = "admin") -> str:
+def _login_and_get_token(client, user: str = "test-user", password: str = "test-password") -> str:
     resp = client.post("/api/auth/login", json={"user": user, "password": password})
     assert resp.status_code == 200
     json = resp.get_json()

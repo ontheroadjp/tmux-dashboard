@@ -35,8 +35,10 @@ def load_config() -> AppConfig:
     else:
         allowed = {item.strip() for item in raw.split(",") if item.strip()}
 
-    auth_user = os.getenv("DASHBOARD_AUTH_USER", "admin").strip()
-    auth_password = os.getenv("DASHBOARD_AUTH_PASSWORD", "admin").strip()
+    auth_user = os.getenv("DASHBOARD_AUTH_USER", "").strip()
+    auth_password = os.getenv("DASHBOARD_AUTH_PASSWORD", "").strip()
+    if not auth_user or not auth_password:
+        raise ValueError("DASHBOARD_AUTH_USER and DASHBOARD_AUTH_PASSWORD must be set")
     auth_secret = os.getenv("DASHBOARD_AUTH_SECRET", "").strip()
     if not auth_secret:
         # Generate a strong per-process secret when env is not supplied.
