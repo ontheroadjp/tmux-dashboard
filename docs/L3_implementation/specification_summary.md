@@ -59,11 +59,14 @@
   - 根拠: `frontend/app/page.tsx:390`
 - pane 詳細ページは「pane情報 + 現在出力 + Actions」を表示し、Actions の対象は選択中 pane 固定
   - Actions は `send key` / `clear` / `send enter` を表示する
-  - `clear` は入力欄を消去せず、対象 pane に `send_keys(keys="C-u")` を送って tmux プロンプト入力行をクリアする
+  - `keys` 入力欄の初期値は空文字
+  - `send key` は `keys` が空欄のとき `send_keys(keys="C-u")` を送って tmux プロンプト入力行をクリアする
+  - `clear` は tmux には送信せず、`keys` 入力欄を空にする
   - keys 入力欄は multiline（3行）で、入力中フォーカス時はポーリング更新を抑止する
   - Actions レイアウトは「1段目: keys入力欄（multiline）、2段目: 2:1 幅の send key/clear、3段目: send enter」
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:126`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:293`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:153`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:169`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:290`
 - ヘッダーは左端アプリアイコンでトップ遷移し、ログアウトはアイコンボタン、ユーザー表示はアバターで行う
   - 根拠: `frontend/app/page.tsx:273`
   - 根拠: `frontend/app/page.tsx:279`
