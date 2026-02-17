@@ -77,7 +77,7 @@ export default function PanePage() {
   const [allowedActions, setAllowedActions] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [keys, setKeys] = useState("Enter");
+  const [keys, setKeys] = useState("");
   const [isKeysFocused, setIsKeysFocused] = useState(false);
   const keysInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -155,7 +155,8 @@ export default function PanePage() {
     if (!detail) {
       return;
     }
-    runAction("send_keys", { target_pane: detail.pane.id, keys });
+    const payloadKeys = keys.trim() === "" ? "C-u" : keys;
+    runAction("send_keys", { target_pane: detail.pane.id, keys: payloadKeys });
   }
 
   function onSendEnter() {
@@ -166,10 +167,7 @@ export default function PanePage() {
   }
 
   function onClearPrompt() {
-    if (!detail) {
-      return;
-    }
-    runAction("send_keys", { target_pane: detail.pane.id, keys: "C-u" });
+    setKeys("");
   }
 
   async function onLogout() {
