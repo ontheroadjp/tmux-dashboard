@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const BACKEND_API_BASE = process.env.BACKEND_API_BASE ?? "http://127.0.0.1:5001";
-const AUTH_COOKIE_NAME = "tmux_dashboard_token";
+import { backendUrl, getAuthToken, withAuthHeader } from "../_shared";
 
 export async function GET(req: NextRequest) {
-  const url = `${BACKEND_API_BASE}/api/snapshot`;
-  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value ?? "";
+  const url = backendUrl("/api/snapshot");
+  const token = getAuthToken(req);
 
   try {
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
+    const headers = withAuthHeader(token);
     const resp = await fetch(url, { cache: "no-store", headers });
     const text = await resp.text();
     return new NextResponse(text, {

@@ -37,7 +37,7 @@
 - tmux/network/actions を1ページで表示
   - 根拠: `frontend/app/page.tsx:293`
 - Material Design 3 ベースの UI（MUI theme + AppBar/Card/Chip/TextField/Button）で構成
-  - 根拠: `frontend/app/page.tsx:44`
+  - 根拠: `frontend/lib/theme.ts:3`
 - 表示機能（snapshot）と操作機能（actions API 呼び出し）は維持
   - 根拠: `frontend/app/pane/[paneId]/page.tsx:112`
 - tmux セクションは「セッションカード一覧」をトップ表示とし、選択セッションのウインドウを Tabs で表示
@@ -50,10 +50,9 @@
   - `codex` / `claude code` / `gemini` を含む: AI agent アイコン（緑）
   - `server` / `サーバー` を含む: server アイコン（青）
   - `tunnel` / `ssh` を含む: ssh アイコン
-  - 根拠: `frontend/app/page.tsx:40`
-  - 根拠: `frontend/app/page.tsx:421`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:54`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:244`
+  - 根拠: `frontend/lib/titleIcon.tsx:7`
+  - 根拠: `frontend/app/page.tsx:388`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:222`
 - トップページは Actions セクションを表示せず、pane クリックで `/pane/[paneId]` に遷移する
   - 根拠: `frontend/app/page.tsx:299`
   - 根拠: `frontend/app/page.tsx:390`

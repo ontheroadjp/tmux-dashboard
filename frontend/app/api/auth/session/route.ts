@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const BACKEND_API_BASE = process.env.BACKEND_API_BASE ?? "http://127.0.0.1:5001";
-const AUTH_COOKIE_NAME = "tmux_dashboard_token";
+import { AUTH_COOKIE_NAME, backendUrl, getAuthToken, withAuthHeader } from "../../_shared";
 
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get(AUTH_COOKIE_NAME)?.value ?? "";
+  const token = getAuthToken(req);
   if (!token) {
     return NextResponse.json({ ok: false, authenticated: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const url = `${BACKEND_API_BASE}/api/auth/session`;
+  const url = backendUrl("/api/auth/session");
   try {
     const resp = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: withAuthHeader(token),
       cache: "no-store",
     });
     const json = (await resp.json().catch(() => ({}))) as {
