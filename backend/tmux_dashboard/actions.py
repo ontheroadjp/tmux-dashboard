@@ -29,11 +29,16 @@ def execute_action(action: str, payload: Dict[str, object]) -> Dict[str, object]
         if not target:
             return {"ok": False, "error": "target_pane is required"}
 
-        key_args: List[str]
         if isinstance(keys, list):
             key_args = [str(item) for item in keys]
         else:
             key_args = [str(keys)]
+
+        # Literal mode is expressed as ["-l", "<text>"] from frontend.
+        # Use explicit tmux option placement to avoid argument parsing ambiguity.
+        if key_args and key_args[0] == "-l":
+            literal_text = key_args[1] if len(key_args) > 1 else ""
+            return _run_tmux(["send-keys", "-l", "-t", target, literal_text])
 
         return _run_tmux(["send-keys", "-t", target, *key_args])
 
