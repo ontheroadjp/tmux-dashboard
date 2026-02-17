@@ -12,8 +12,8 @@ python3 -m venv venv
 Backend API endpoint: `http://127.0.0.1:5001`
 
 Auth environment variables (backend):
-- `DASHBOARD_AUTH_USER` (default: `admin`)
-- `DASHBOARD_AUTH_PASSWORD` (default: `admin`)
+- `DASHBOARD_AUTH_USER` (required)
+- `DASHBOARD_AUTH_PASSWORD` (required)
 - `DASHBOARD_AUTH_SECRET` (optional: if omitted, a random secret is auto-generated at process start)
 - `DASHBOARD_AUTH_TOKEN_TTL_SEC` (default: `86400`)
 
