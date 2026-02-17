@@ -173,15 +173,7 @@ export default function PanePage() {
     const payloadKeys =
       keys.trim() === ""
         ? ["C-u"]
-        : Array.from(keys).map((char) => {
-            if (char === "\n") {
-              return "Enter";
-            }
-            if (char === "\t") {
-              return "Tab";
-            }
-            return char;
-          });
+        : ["-l", keys];
     void runAction("send_keys", { target_pane: targetPaneId, keys: payloadKeys });
   }
 
@@ -288,6 +280,7 @@ export default function PanePage() {
                   position: "sticky",
                   top: 0,
                   zIndex: (theme) => theme.zIndex.appBar,
+                  mt: 0,
                   mb: 2,
                   backgroundColor: "#edf5ff",
                 }}
