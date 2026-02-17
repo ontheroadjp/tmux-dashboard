@@ -50,30 +50,38 @@
   - `codex` / `claude code` / `gemini` を含む: AI agent アイコン（緑）
   - `server` / `サーバー` を含む: server アイコン（青）
   - `tunnel` / `ssh` を含む: ssh アイコン
+  - pane detail のタブでは非アクティブ時はモノクロ表示、アクティブ時はカラー表示
   - 根拠: `frontend/lib/titleIcon.tsx:7`
   - 根拠: `frontend/app/page.tsx:388`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:222`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:303`
 - トップページは Actions セクションを表示せず、pane クリックで `/pane/[paneId]` に遷移する
   - 根拠: `frontend/app/page.tsx:299`
   - 根拠: `frontend/app/page.tsx:390`
-- pane 詳細ページは「pane情報 + 現在出力 + Actions」を表示し、Actions の対象は選択中 pane 固定
+- pane 詳細ページは「1ページ=1ウインドウ」として表示し、ウインドウ内ペインをタブで切り替える
+  - タブ数はウインドウ内ペイン数に連動し、タブラベルは pane title
+  - アクティブタブの pane 詳細のみ 3 秒ポーリングする（非アクティブ pane はポーリングしない）
+  - Pane Info と Current Output は同一タブ内で表示
+  - Pane Info はアコーディオンで折りたたみ可能（初期展開）
+  - サブヘッダー（タブ行）は sticky で上端固定される
+  - Actions の対象は選択中 pane 固定
   - Actions は `send key` / `clear` / `send enter` を表示する
   - `keys` 入力欄の初期値は空文字
-  - `send key` は `keys` が空欄のとき `send_keys(keys="C-u")` を送って tmux プロンプト入力行をクリアする
+  - `send key` は `keys` が空欄のとき `send_keys(keys=["C-u"])` を送って tmux プロンプト入力行をクリアする
+  - `send key` は `keys` 入力時に `send_keys(keys=["-l", <keys>])` を送って文字列をリテラル送信する
   - `clear` は tmux には送信せず、`keys` 入力欄を空にする
   - keys 入力欄は multiline（3行）で、入力中フォーカス時はポーリング更新を抑止する
   - Actions レイアウトは「1段目: keys入力欄（multiline）、2段目: 2:1 幅の send key/clear、3段目: send enter」
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:153`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:169`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:290`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:173`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:194`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:295`
 - ヘッダーは左端アプリアイコンでトップ遷移し、ログアウトはアイコンボタン、ユーザー表示はアバターで行う
   - 根拠: `frontend/app/page.tsx:273`
   - 根拠: `frontend/app/page.tsx:279`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:189`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:195`
-- API 表示（`API: ${API_LABEL}`）はヘッダー外の本文上部に表示する
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:264`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:272`
+- API 表示（`API: ${API_LABEL}`）は pane 詳細ページではヘッダー内に表示する
   - 根拠: `frontend/app/page.tsx:288`
-  - 根拠: `frontend/app/pane/[paneId]/page.tsx:204`
+  - 根拠: `frontend/app/pane/[paneId]/page.tsx:270`
 - スマホ表示での横幅変動を抑えるため、主要コンテナに `minWidth: 0` とテキスト折り返し制御を適用
   - 根拠: `frontend/app/page.tsx:287`
   - 根拠: `frontend/app/page.tsx:360`
