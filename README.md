@@ -21,7 +21,13 @@ Auth environment variables (backend):
 
 ```bash
 pkill -f "backend/run.py" || true
-lsof -nP -iTCP:5001 -sTCP:LISTEN
+# Stop all processes that are still listening on 5001 (if any)
+PIDS=$(lsof -tiTCP:5001 -sTCP:LISTEN || true)
+[ -n "$PIDS" ] && kill $PIDS || true
+
+# Must be empty before restart
+lsof -nP -iTCP:5001 -sTCP:LISTEN || true
+
 cd backend
 DASHBOARD_AUTH_USER=admin DASHBOARD_AUTH_PASSWORD=hogehoge ./venv/bin/python run.py
 ```
