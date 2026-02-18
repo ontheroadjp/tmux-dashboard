@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Accordion,
@@ -17,6 +17,8 @@ import {
   Container,
   CssBaseline,
   IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Stack,
   Tab,
@@ -36,6 +38,13 @@ import { titleIcon } from "../../../lib/titleIcon";
 const POLL_MS = 3000;
 
 type PaneTab = PaneDetail["pane"];
+type WindowTab = {
+  id: string;
+  index: number;
+  name: string;
+  active: boolean;
+  panes: PaneTab[];
+};
 
 export default function PanePage() {
   const params = useParams<{ paneId: string }>();
@@ -47,8 +56,10 @@ export default function PanePage() {
   const [currentUser, setCurrentUser] = useState("");
   const [detail, setDetail] = useState<PaneDetail | null>(null);
   const [windowPanes, setWindowPanes] = useState<PaneTab[]>([]);
+  const [sessionWindows, setSessionWindows] = useState<WindowTab[]>([]);
   const [activePaneId, setActivePaneId] = useState("");
   const [windowTitle, setWindowTitle] = useState("pane detail");
+  const [windowMenuAnchorEl, setWindowMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [allowedActions, setAllowedActions] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -73,8 +84,27 @@ export default function PanePage() {
       setAllowedActions(snapshot.allowed_actions);
 
       const session = snapshot.tmux.sessions.find((item) => item.name === paneDetail.session.name);
-      const window = session?.windows.find((item) => item.id === paneDetail.window.id);
-      const panes = (window?.panes ?? [paneDetail.pane]) as PaneTab[];
+      const windows: WindowTab[] = (session?.windows ?? []).map((window) => ({
+        id: window.id,
+        index: window.index,
+        name: window.name,
+        active: window.active,
+        panes: window.panes as PaneTab[],
+      }));
+      const hasCurrentWindow = windows.some((window) => window.id === paneDetail.window.id);
+      if (!hasCurrentWindow) {
+        windows.push({
+          id: paneDetail.window.id,
+          index: paneDetail.window.index,
+          name: paneDetail.window.name,
+          active: paneDetail.window.active,
+          panes: [paneDetail.pane],
+        });
+      }
+      setSessionWindows(windows);
+
+      const currentWindow = windows.find((window) => window.id === paneDetail.window.id);
+      const panes = currentWindow?.panes ?? [paneDetail.pane];
       setWindowPanes(panes);
 
       if (!panes.some((pane) => pane.id === targetPaneId)) {
@@ -205,10 +235,50 @@ export default function PanePage() {
   }, [windowPanes, detail]);
 
   const targetPaneId = activePaneId || detail?.pane.id || paneIdParam;
+  const activeTabsValue = useMemo(() => {
+    if (activePaneId && tabs.some((pane) => pane.id === activePaneId)) {
+      return activePaneId;
+    }
+    if (detail?.pane.id && tabs.some((pane) => pane.id === detail.pane.id)) {
+      return detail.pane.id;
+    }
+    return false;
+  }, [activePaneId, detail, tabs]);
+  const activeWindowId = detail?.window.id ?? "";
+  const sortedWindows = useMemo(
+    () => [...sessionWindows].sort((a, b) => a.index - b.index),
+    [sessionWindows]
+  );
+  const isWindowMenuOpen = Boolean(windowMenuAnchorEl);
 
   function handlePaneTabChange(nextPaneId: string) {
     setActivePaneId(nextPaneId);
     void load(nextPaneId);
+  }
+
+  function openWindowMenu(e: ReactMouseEvent<HTMLElement>) {
+    setWindowMenuAnchorEl(e.currentTarget);
+  }
+
+  function closeWindowMenu() {
+    setWindowMenuAnchorEl(null);
+  }
+
+  function handleWindowChange(nextWindowId: string) {
+    closeWindowMenu();
+    const nextWindow = sortedWindows.find((window) => window.id === nextWindowId);
+    if (!nextWindow) {
+      return;
+    }
+    const nextPane = nextWindow?.panes.find((pane) => pane.active) ?? nextWindow?.panes[0];
+    if (!nextPane) {
+      return;
+    }
+    setWindowPanes(nextWindow.panes);
+    setWindowTitle(nextWindow.name || "pane detail");
+    setActivePaneId(nextPane.id);
+    router.push(`/pane/${encodeURIComponent(nextPane.id)}`);
+    void load(nextPane.id);
   }
 
   if (!authReady) {
@@ -256,9 +326,38 @@ export default function PanePage() {
               <IconButton color="primary" onClick={() => router.push("/")} aria-label="go to top">
                 <TerminalIcon />
               </IconButton>
-              <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
-                {windowTitle}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", minWidth: 0, flexGrow: 1 }}>
+                <Typography variant="h6" component="h1" sx={{ minWidth: 0 }}>
+                  {windowTitle}
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={openWindowMenu}
+                  aria-label="switch window"
+                  sx={{ ml: 0.25, p: 0.25, color: "text.primary", borderRadius: 1 }}
+                >
+                  <Typography variant="caption" component="span" sx={{ lineHeight: 1 }}>
+                    ▼
+                  </Typography>
+                </IconButton>
+                <Menu
+                  anchorEl={windowMenuAnchorEl}
+                  open={isWindowMenuOpen}
+                  onClose={closeWindowMenu}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  transformOrigin={{ vertical: "top", horizontal: "left" }}
+                >
+                  {sortedWindows.map((window) => (
+                    <MenuItem
+                      key={window.id}
+                      selected={window.id === activeWindowId}
+                      onClick={() => handleWindowChange(window.id)}
+                    >
+                      {`#${window.index} ${window.name || "(no name)"}`}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </Box>
               <Chip size="small" color="primary" variant="outlined" label={`API: ${API_LABEL}`} />
               {currentUser ? <Avatar sx={{ width: 30, height: 30, bgcolor: "primary.main", fontSize: 13 }}>{currentUser.slice(0, 1).toUpperCase()}</Avatar> : null}
               <IconButton color="primary" onClick={onLogout} aria-label="logout">
@@ -286,7 +385,7 @@ export default function PanePage() {
                 }}
               >
                 <Tabs
-                  value={activePaneId || false}
+                  value={activeTabsValue}
                   onChange={(_, value) => handlePaneTabChange(String(value))}
                   variant="scrollable"
                   scrollButtons="auto"
