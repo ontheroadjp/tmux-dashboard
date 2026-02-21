@@ -9,7 +9,8 @@ python3 -m venv venv
 ./venv/bin/python run.py
 ```
 
-Backend API endpoint: `http://127.0.0.1:5001`
+Backend API endpoint (dev default): `http://127.0.0.1:5001`
+Backend API endpoint (prod): `http://127.0.0.1:10323`
 
 Auth environment variables (backend):
 - `DASHBOARD_AUTH_USER` (required)
@@ -29,7 +30,7 @@ PIDS=$(lsof -tiTCP:5001 -sTCP:LISTEN || true)
 lsof -nP -iTCP:5001 -sTCP:LISTEN || true
 
 cd backend
-DASHBOARD_AUTH_USER=admin DASHBOARD_AUTH_PASSWORD=hogehoge ./venv/bin/python run.py
+DASHBOARD_AUTH_USER=<AUTH_USER> DASHBOARD_AUTH_PASSWORD=<AUTH_PASSWORD> ./venv/bin/python run.py
 ```
 
 - If you use auto-generated secret (no `DASHBOARD_AUTH_SECRET`), previously issued tokens become invalid after restart.
@@ -41,11 +42,11 @@ Direct login check:
 ```bash
 curl -i -X POST http://127.0.0.1:5001/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"user":"admin","password":"admin"}'
+  -d '{"user":"<AUTH_USER>","password":"<AUTH_PASSWORD>"}'
 
 curl -i -X POST http://127.0.0.1:5001/api/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"user":"admin","password":"hogehoge"}'
+  -d '{"user":"<AUTH_USER>","password":"<AUTH_PASSWORD>"}'
 ```
 
 ## Frontend (Next.js)
@@ -56,7 +57,8 @@ npm install
 npm run dev
 ```
 
-Frontend endpoint: `http://127.0.0.1:4000`
+Frontend endpoint (dev): `http://127.0.0.1:4000`
+Frontend endpoint (prod): `http://127.0.0.1:10322`
 
 Login flow:
 - Open frontend and login from the UI
@@ -68,7 +70,10 @@ Login flow:
 Default API resolution:
 - `NEXT_PUBLIC_API_BASE` is set: use that value directly from browser
 - not set: use same-origin Next.js API routes (`/api/*`) and proxy to backend
-- proxy destination default: `http://127.0.0.1:5001` (`BACKEND_API_BASE` で変更可能)
+- proxy destination default:
+  - dev (`NODE_ENV=development`): `http://127.0.0.1:5001`
+  - prod (`NODE_ENV=production`): `http://127.0.0.1:10323`
+  - `BACKEND_API_BASE` で上書き可能
 
 Example (when backend is not local 127.0.0.1):
 

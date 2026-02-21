@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 
-export const BACKEND_API_BASE = process.env.BACKEND_API_BASE ?? "http://127.0.0.1:5001";
+const defaultBackendApiBase = process.env.NODE_ENV === "development" ? "http://127.0.0.1:5001" : "http://127.0.0.1:10323";
+export const BACKEND_API_BASE = process.env.BACKEND_API_BASE ?? defaultBackendApiBase;
 export const AUTH_COOKIE_NAME = "tmux_dashboard_token";
 
 export function backendUrl(path: string): string {
