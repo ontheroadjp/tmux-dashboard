@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="__REPO_ROOT__"
 BACKEND_DIR="$REPO_ROOT/backend"
-ENV_FILE="$REPO_ROOT/launchd/backend.prod.env"
+ENV_FILE="$BACKEND_DIR/.env.prod"
 
 if [ -f "$ENV_FILE" ]; then
   set -a
@@ -11,9 +11,11 @@ if [ -f "$ENV_FILE" ]; then
   set +a
 fi
 
-: "${DASHBOARD_AUTH_USER:?DASHBOARD_AUTH_USER is required. Set it in launchd/backend.prod.env}"
-: "${DASHBOARD_AUTH_PASSWORD:?DASHBOARD_AUTH_PASSWORD is required. Set it in launchd/backend.prod.env}"
+: "${DASHBOARD_AUTH_USER:?DASHBOARD_AUTH_USER is required. Set it in backend/.env.prod}"
+: "${DASHBOARD_AUTH_PASSWORD:?DASHBOARD_AUTH_PASSWORD is required. Set it in backend/.env.prod}"
 : "${DASHBOARD_AUTH_SECRET:?DASHBOARD_AUTH_SECRET is required in production}"
+export DASHBOARD_ENV=prod
+export DASHBOARD_ENV_FILE="$ENV_FILE"
 
 if [ ! -x "$BACKEND_DIR/venv/bin/gunicorn" ]; then
   echo "gunicorn not found at $BACKEND_DIR/venv/bin/gunicorn. Run: cd backend && ./venv/bin/pip install -r requirements.txt" >&2

@@ -4,13 +4,30 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 BACKEND_DIR="$REPO_ROOT/backend"
 FRONTEND_DIR="$REPO_ROOT/frontend"
+BACKEND_ENV_FILE="$BACKEND_DIR/.env.dev"
+FRONTEND_ENV_FILE="$FRONTEND_DIR/.env.dev"
+
+if [ ! -f "$BACKEND_ENV_FILE" ]; then
+  echo "missing backend env file: $BACKEND_ENV_FILE" >&2
+  echo "Run: cp backend/.env.dev.example backend/.env.dev" >&2
+  exit 1
+fi
+
+if [ ! -f "$FRONTEND_ENV_FILE" ]; then
+  echo "missing frontend env file: $FRONTEND_ENV_FILE" >&2
+  echo "Run: cp frontend/.env.dev.example frontend/.env.dev" >&2
+  exit 1
+fi
+
+set -a
+source "$BACKEND_ENV_FILE"
+source "$FRONTEND_ENV_FILE"
+set +a
 
 BACKEND_PORT="${DASHBOARD_PORT:-5001}"
 FRONTEND_PORT="${FRONTEND_PORT:-4000}"
-
-# Development defaults; override from shell when needed.
-export DASHBOARD_AUTH_USER="${DASHBOARD_AUTH_USER:-admin}"
-export DASHBOARD_AUTH_PASSWORD="${DASHBOARD_AUTH_PASSWORD:-admin}"
+export DASHBOARD_ENV=dev
+export DASHBOARD_ENV_FILE="$BACKEND_ENV_FILE"
 export BACKEND_API_BASE="${BACKEND_API_BASE:-http://127.0.0.1:${BACKEND_PORT}}"
 
 if [ ! -x "$BACKEND_DIR/venv/bin/python" ]; then
@@ -61,7 +78,7 @@ trap cleanup INT TERM EXIT
 
 (
   cd "$BACKEND_DIR"
-  DASHBOARD_PORT="$BACKEND_PORT" ./venv/bin/python run.py
+  ./venv/bin/python run.py
 ) &
 BACKEND_PID=$!
 

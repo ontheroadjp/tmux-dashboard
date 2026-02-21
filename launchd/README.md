@@ -41,12 +41,12 @@ cd <REPO_ROOT>/backend
 
 ```bash
 cd <REPO_ROOT>
-cp launchd/backend.prod.env.example launchd/backend.prod.env
-cp launchd/frontend.prod.env.example launchd/frontend.prod.env
-chmod 600 launchd/backend.prod.env
+cp backend/.env.prod.example backend/.env.prod
+cp frontend/.env.prod.example frontend/.env.prod
+chmod 600 backend/.env.prod
 ```
 
-`launchd/backend.prod.env` required:
+`backend/.env.prod` required:
 
 - `DASHBOARD_AUTH_USER`
 - `DASHBOARD_AUTH_PASSWORD`

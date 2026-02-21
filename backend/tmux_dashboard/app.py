@@ -12,6 +12,7 @@ def create_app() -> Flask:
     app = Flask(__name__)
     cfg = load_config()
     serializer = URLSafeTimedSerializer(cfg.auth_secret)
+    app.config["DASHBOARD_DEBUG"] = cfg.debug
 
     def issue_token(user: str) -> str:
         return serializer.dumps({"sub": user})
@@ -39,9 +40,12 @@ def create_app() -> Flask:
 
     @app.after_request
     def add_cors_headers(response):
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
-        response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+        origin = request.headers.get("Origin", "")
+        if cfg.cors_origins and origin in cfg.cors_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Vary"] = "Origin"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+            response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
         return response
 
     @app.route("/api/health", methods=["GET"])

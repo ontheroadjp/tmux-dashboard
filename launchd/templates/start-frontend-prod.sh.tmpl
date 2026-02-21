@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="__REPO_ROOT__"
 FRONTEND_DIR="$REPO_ROOT/frontend"
-ENV_FILE="$REPO_ROOT/launchd/frontend.prod.env"
+ENV_FILE="$FRONTEND_DIR/.env.prod"
 NVM_NODE_GLOB="$HOME/.nvm/versions/node"/*/bin
 
 if [ -f "$ENV_FILE" ]; then
