@@ -49,3 +49,4 @@ launchd/logs/
 *.env
 *.env.local
 *.env.production
+docs/manual/*.p12
