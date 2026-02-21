@@ -37,3 +37,15 @@ venv/
 venv/
 backend/venv/
 backend/venv/
+
+launchd/backend.prod.env
+launchd/frontend.prod.env
+launchd/*.env
+launchd/start-backend-prod.sh
+launchd/start-frontend-prod.sh
+launchd/jp.ontheroad.tmux-dashboard.backend.prod.plist
+launchd/jp.ontheroad.tmux-dashboard.frontend.prod.plist
+launchd/logs/
+*.env
+*.env.local
+*.env.production
