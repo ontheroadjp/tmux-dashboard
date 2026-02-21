@@ -8,6 +8,15 @@
 - 開発バックエンド: `127.0.0.1:5001`
 - 開発フロントエンド: `127.0.0.1:4000`
 - `backend/venv` と `frontend/node_modules` がセットアップ済みであること。
+- `backend/.env.dev` と `frontend/.env.dev` が配置済みであること。
+
+## 0. 開発用 env の作成
+
+```bash
+cd <REPO_ROOT>
+cp backend/.env.dev.example backend/.env.dev
+cp frontend/.env.dev.example frontend/.env.dev
+```
 
 ## 1. `dev-up.sh` で同時起動
 
@@ -16,20 +25,13 @@ cd <REPO_ROOT>
 ./dev-up.sh
 ```
 
-必要に応じて上書き可能:
-
-```bash
-DASHBOARD_AUTH_USER=<DEV_USER> DASHBOARD_AUTH_PASSWORD=<DEV_PASSWORD> ./dev-up.sh
-FRONTEND_PORT=4010 DASHBOARD_PORT=5010 ./dev-up.sh
-```
-
 ## 2. 個別起動
 
 ### 2-1. バックエンド
 
 ```bash
 cd <REPO_ROOT>/backend
-DASHBOARD_AUTH_USER=<DEV_USER> DASHBOARD_AUTH_PASSWORD=<DEV_PASSWORD> ./venv/bin/python run.py
+DASHBOARD_ENV=dev ./venv/bin/python run.py
 ```
 
 ### 2-2. フロントエンド

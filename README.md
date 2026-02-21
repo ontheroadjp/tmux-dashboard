@@ -6,6 +6,7 @@
 cd backend
 python3 -m venv venv
 ./venv/bin/pip install -r requirements.txt
+cp .env.dev.example .env.dev
 ./venv/bin/python run.py
 ```
 
@@ -17,6 +18,12 @@ Auth environment variables (backend):
 - `DASHBOARD_AUTH_PASSWORD` (required)
 - `DASHBOARD_AUTH_SECRET` (optional: if omitted, a random secret is auto-generated at process start)
 - `DASHBOARD_AUTH_TOKEN_TTL_SEC` (default: `86400`)
+- `DASHBOARD_DEBUG` (`1` for development, `0` for production)
+- `DASHBOARD_CORS_ORIGINS` (comma-separated allowed origins; no CORS headers if unset)
+
+Recommended env files:
+- development: `backend/.env.dev` (copy from `backend/.env.dev.example`)
+- production (launchd): `backend/.env.prod` (copy from `backend/.env.prod.example`)
 
 ### Backend restart procedure (when auth settings are changed)
 
@@ -30,7 +37,7 @@ PIDS=$(lsof -tiTCP:5001 -sTCP:LISTEN || true)
 lsof -nP -iTCP:5001 -sTCP:LISTEN || true
 
 cd backend
-DASHBOARD_AUTH_USER=<AUTH_USER> DASHBOARD_AUTH_PASSWORD=<AUTH_PASSWORD> ./venv/bin/python run.py
+./venv/bin/python run.py
 ```
 
 - If you use auto-generated secret (no `DASHBOARD_AUTH_SECRET`), previously issued tokens become invalid after restart.
@@ -54,6 +61,7 @@ curl -i -X POST http://127.0.0.1:5001/api/auth/login \
 ```bash
 cd frontend
 npm install
+cp .env.dev.example .env.dev
 npm run dev
 ```
 
@@ -79,7 +87,9 @@ Example (when backend is not local 127.0.0.1):
 
 ```bash
 cd frontend
-BACKEND_API_BASE=http://<backend-host>:5001 npm run dev
+cp .env.dev.example .env.dev
+# edit BACKEND_API_BASE in .env.dev
+npm run dev
 ```
 
 ## Action Scope Configuration

@@ -50,3 +50,7 @@ launchd/logs/
 *.env.local
 *.env.production
 *.p12
+backend/.env.dev
+backend/.env.prod
+frontend/.env.dev
+frontend/.env.prod

@@ -26,6 +26,14 @@
   - 開発既定: `127.0.0.1:5001`（`DASHBOARD_PORT` で変更可能）
   - 本番（launchd/gunicorn）: `127.0.0.1:10323`
   - 根拠: `backend/run.py:6`
+- backend 設定ファイル
+  - 開発: `backend/.env.dev`
+  - 本番: `backend/.env.prod`
+  - 根拠: `backend/tmux_dashboard/config.py:34`
+- backend debug 切替は `DASHBOARD_DEBUG`（既定は false）
+  - 根拠: `backend/tmux_dashboard/config.py:78`
+- backend CORS は `DASHBOARD_CORS_ORIGINS` に含まれる Origin のみ許可
+  - 根拠: `backend/tmux_dashboard/app.py:44`
 - backend 認証は `DASHBOARD_AUTH_USER` / `DASHBOARD_AUTH_PASSWORD` と Bearer token で実施
   - 根拠: `backend/tmux_dashboard/config.py:31`
   - 根拠: `backend/tmux_dashboard/app.py:50`
@@ -50,6 +58,9 @@
   - start script (`npm run start`): `4000`
   - 本番（launchd/next start）: `10322`
   - 根拠: `frontend/package.json:5`
+- frontend 設定ファイル
+  - 開発: `frontend/.env.dev`
+  - 本番: `frontend/.env.prod`
 
 ## 未確認事項
 - CI 上の標準実行手順。
