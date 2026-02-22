@@ -130,6 +130,7 @@ sudo openssl pkcs12 -export \
 
 ```nginx
 ssl_client_certificate /etc/nginx/client-ca/ca.crt;
+ssl_crl /etc/nginx/client-ca/ca.crl;
 ssl_verify_client on;
 ssl_verify_depth 2;
 ```
@@ -194,7 +195,7 @@ sudo chmod 644 /tmp/client-iphone.p12
 ## 7. 運用ベストプラクティス
 
 - 端末ごとに別証明書を発行する。
-- 紛失時は該当証明書を失効/再発行する。
+- 紛失時は該当証明書を失効/再発行する（詳細: `docs/manual/crl-guide.md`）。
 - `ca.key` は厳重保管し、サーバー外バックアップを暗号化する。
 - `.p12` 配布後はサーバー上の配布用ファイルを削除する。
 - mTLS だけに頼らず、アプリ側認証 (ID/PW + token) も併用する。
