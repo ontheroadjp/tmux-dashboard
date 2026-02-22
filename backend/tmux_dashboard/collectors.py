@@ -1,12 +1,34 @@
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from typing import Any, Dict, List
 
+COMMAND_TIMEOUT_SEC = 5
+SENSITIVE_PATTERNS = [
+    re.compile(r"(?i)(authorization\s*:\s*bearer)\s+([^\s]+)"),
+    re.compile(r"(?i)(password|passwd|pwd)\s*([=:])\s*([^\s]+)"),
+    re.compile(r"(?i)(token|secret|api[_-]?key)\s*([=:])\s*([^\s]+)"),
+    re.compile(r"(?i)(bearer)\s+([^\s]+)"),
+]
+
+
+def _mask_sensitive_text(text: str) -> str:
+    masked = text
+    for pattern in SENSITIVE_PATTERNS:
+        if "authorization" in pattern.pattern.lower() or pattern.pattern.lower().startswith("(?i)(bearer)"):
+            masked = pattern.sub(r"\1 [REDACTED]", masked)
+        else:
+            masked = pattern.sub(r"\1\2[REDACTED]", masked)
+    return masked
+
 
 def _run_command(args: List[str]) -> str:
-    completed = subprocess.run(args, check=False, capture_output=True, text=True)
+    try:
+        completed = subprocess.run(args, check=False, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_SEC)
+    except subprocess.TimeoutExpired:
+        return ""
     if completed.returncode != 0:
         return ""
     return completed.stdout.strip()
@@ -29,7 +51,7 @@ def _ps_details(pid: str) -> Dict[str, str]:
         "ppid": parts[1],
         "user": parts[2],
         "elapsed": parts[3],
-        "command": parts[4],
+        "command": _mask_sensitive_text(parts[4]),
     }
 
 
@@ -163,7 +185,8 @@ def collect_network_state() -> Dict[str, object]:
         if "ssh" not in command:
             continue
 
-        record = {"pid": pid, "ppid": ppid, "user": user, "command": command}
+        masked_command = _mask_sensitive_text(command)
+        record = {"pid": pid, "ppid": ppid, "user": user, "command": masked_command}
         ssh_connections.append(record)
 
         has_tunnel = any(flag in command for flag in (" -L ", " -R ", " -D ", " -W "))
@@ -172,7 +195,7 @@ def collect_network_state() -> Dict[str, object]:
                 {
                     "pid": pid,
                     "user": user,
-                    "command": command,
+                    "command": masked_command,
                     "kind": "tunnel",
                 }
             )
@@ -188,12 +211,16 @@ def _capture_pane_output(pane_id: str, lines: int = 200) -> str:
     if not pane_id:
         return ""
 
-    completed = subprocess.run(
-        ["tmux", "capture-pane", "-p", "-t", pane_id, "-S", f"-{max(lines, 1)}"],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    try:
+        completed = subprocess.run(
+            ["tmux", "capture-pane", "-p", "-t", pane_id, "-S", f"-{max(lines, 1)}"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=COMMAND_TIMEOUT_SEC,
+        )
+    except subprocess.TimeoutExpired:
+        return ""
     if completed.returncode != 0:
         return ""
     return completed.stdout

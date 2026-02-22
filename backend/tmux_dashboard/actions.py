@@ -3,15 +3,33 @@ from __future__ import annotations
 import subprocess
 from typing import Dict, List
 
+TMUX_COMMAND_TIMEOUT_SEC = 5
+
 
 def _run_tmux(args: List[str]) -> Dict[str, object]:
-    completed = subprocess.run(["tmux", *args], check=False, capture_output=True, text=True)
+    try:
+        completed = subprocess.run(
+            ["tmux", *args],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=TMUX_COMMAND_TIMEOUT_SEC,
+        )
+    except subprocess.TimeoutExpired as e:
+        return {
+            "ok": False,
+            "stdout": (e.stdout or "").strip(),
+            "stderr": (e.stderr or "tmux command timed out").strip(),
+            "returncode": 124,
+            "code": "TMUX_ACTION_TIMEOUT",
+        }
     if completed.returncode != 0:
         return {
             "ok": False,
             "stdout": completed.stdout.strip(),
             "stderr": completed.stderr.strip(),
             "returncode": completed.returncode,
+            "code": "TMUX_ACTION_FAILED",
         }
 
     return {
