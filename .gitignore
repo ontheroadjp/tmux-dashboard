@@ -54,3 +54,6 @@ backend/.env.dev
 backend/.env.prod
 frontend/.env.dev
 frontend/.env.prod
+# Local nginx tunnel config (keep only server/tunnel.example.conf tracked)
+server/tunnel.*.conf
+!server/tunnel.example.conf
