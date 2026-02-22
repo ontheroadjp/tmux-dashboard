@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "network error";
-    return NextResponse.json({ ok: false, error: `backend request failed: ${message} (${url})` }, { status: 502 });
+    return NextResponse.json({ ok: false, error: `backend request failed: ${message}` }, { status: 502 });
   }
 }
 
