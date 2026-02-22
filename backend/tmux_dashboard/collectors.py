@@ -226,11 +226,68 @@ def _capture_pane_output(pane_id: str, lines: int = 200) -> str:
     return completed.stdout
 
 
-def collect_pane_detail(pane_id: str) -> Dict[str, Any] | None:
-    pane_id = pane_id.strip()
-    if not pane_id:
+def _collect_pane_meta(pane_id: str) -> Dict[str, Any] | None:
+    row = _run_command(
+        [
+            "tmux",
+            "list-panes",
+            "-t",
+            pane_id,
+            "-F",
+            "#{session_name}\t#{session_attached}\t#{window_id}\t#{window_index}\t#{window_name}\t#{window_active}\t#{pane_id}\t#{pane_index}\t#{pane_active}\t#{pane_pid}\t#{pane_current_command}\t#{pane_current_path}\t#{pane_title}",
+        ]
+    )
+    if not row:
         return None
 
+    first = row.splitlines()[0]
+    parts = first.split("\t")
+    if len(parts) != 13:
+        return None
+
+    (
+        session_name,
+        session_attached,
+        window_id,
+        window_index,
+        window_name,
+        window_active,
+        pane_id_value,
+        pane_index,
+        pane_active,
+        pane_pid,
+        pane_current_command,
+        pane_current_path,
+        pane_title,
+    ) = parts
+    if pane_id_value != pane_id:
+        return None
+
+    return {
+        "session": {
+            "name": session_name,
+            "attached": session_attached == "1",
+        },
+        "window": {
+            "id": window_id,
+            "index": int(window_index),
+            "name": window_name,
+            "active": window_active == "1",
+        },
+        "pane": {
+            "id": pane_id_value,
+            "index": int(pane_index),
+            "active": pane_active == "1",
+            "pid": pane_pid,
+            "current_command": pane_current_command,
+            "current_path": pane_current_path,
+            "title": pane_title,
+            "process": _ps_details(pane_pid),
+        },
+    }
+
+
+def _collect_pane_detail_from_snapshot(pane_id: str) -> Dict[str, Any] | None:
     tmux_state = collect_tmux_state()
     if not tmux_state.get("running"):
         return None
@@ -255,7 +312,25 @@ def collect_pane_detail(pane_id: str) -> Dict[str, Any] | None:
                         "active": bool(window.get("active", False)),
                     },
                     "pane": pane,
-                    "output": _capture_pane_output(pane_id),
                 }
-
     return None
+
+
+def collect_pane_detail(pane_id: str) -> Dict[str, Any] | None:
+    pane_id = pane_id.strip()
+    if not pane_id:
+        return None
+
+    detail = _collect_pane_meta(pane_id)
+    if detail is None:
+        # Fallback keeps behavior stable even if target tmux format/flags differ.
+        detail = _collect_pane_detail_from_snapshot(pane_id)
+        if detail is None:
+            return None
+
+    return {
+        "session": detail["session"],
+        "window": detail["window"],
+        "pane": detail["pane"],
+        "output": _capture_pane_output(pane_id),
+    }
