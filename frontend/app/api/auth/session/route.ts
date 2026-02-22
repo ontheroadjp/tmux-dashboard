@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "network error";
     return NextResponse.json(
-      { ok: false, authenticated: false, error: `backend request failed: ${message} (${url})` },
+      { ok: false, authenticated: false, error: `backend request failed: ${message}` },
       { status: 502 }
     );
   }
