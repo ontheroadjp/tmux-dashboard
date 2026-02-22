@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+
+REPO_ROOT="__REPO_ROOT__"
+LOG_DIR="$REPO_ROOT/launchd/logs"
+ENV_FILE="$REPO_ROOT/tunnel/.env.prod"
+
+mkdir -p "$LOG_DIR"
+
+if ! command -v autossh >/dev/null 2>&1; then
+  echo "autossh not found. Install it first (e.g. brew install autossh)." >&2
+  exit 1
+fi
+
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  source "$ENV_FILE"
+  set +a
+fi
+
+: "${AUTOSSH_TARGET:?AUTOSSH_TARGET is required. Set it in tunnel/.env.prod}"
+AUTOSSH_REMOTE_PORT="${AUTOSSH_REMOTE_PORT:-10322}"
+AUTOSSH_LOCAL_HOST="${AUTOSSH_LOCAL_HOST:-127.0.0.1}"
+AUTOSSH_LOCAL_PORT="${AUTOSSH_LOCAL_PORT:-10322}"
+AUTOSSH_SERVER_ALIVE_INTERVAL="${AUTOSSH_SERVER_ALIVE_INTERVAL:-30}"
+AUTOSSH_SERVER_ALIVE_COUNT_MAX="${AUTOSSH_SERVER_ALIVE_COUNT_MAX:-3}"
+
+exec autossh -M 0 -N \
+  -o ExitOnForwardFailure=yes \
+  -o "ServerAliveInterval=${AUTOSSH_SERVER_ALIVE_INTERVAL}" \
+  -o "ServerAliveCountMax=${AUTOSSH_SERVER_ALIVE_COUNT_MAX}" \
+  -R "${AUTOSSH_REMOTE_PORT}:${AUTOSSH_LOCAL_HOST}:${AUTOSSH_LOCAL_PORT}" \
+  "$AUTOSSH_TARGET"
