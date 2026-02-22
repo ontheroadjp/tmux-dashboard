@@ -1,5 +1,8 @@
+from types import SimpleNamespace
+
 from tmux_dashboard.app import create_app
 from tmux_dashboard.config import load_config
+from tmux_dashboard.routes import _resolve_client_ip
 
 
 def test_health_endpoint():
@@ -274,3 +277,27 @@ def test_prod_requires_auth_secret(monkeypatch):
         assert False, "load_config should raise ValueError in production when auth secret is missing"
     except ValueError as e:
         assert "DASHBOARD_AUTH_SECRET" in str(e)
+
+
+def test_resolve_client_ip_prefers_forwarded_for_on_loopback():
+    req = SimpleNamespace(
+        remote_addr="127.0.0.1",
+        headers={"X-Forwarded-For": "198.51.100.10, 127.0.0.1", "X-Real-IP": "198.51.100.20"},
+    )
+    assert _resolve_client_ip(req) == "198.51.100.10"
+
+
+def test_resolve_client_ip_falls_back_to_real_ip_on_loopback():
+    req = SimpleNamespace(
+        remote_addr="::1",
+        headers={"X-Forwarded-For": "", "X-Real-IP": "198.51.100.30"},
+    )
+    assert _resolve_client_ip(req) == "198.51.100.30"
+
+
+def test_resolve_client_ip_ignores_forwarded_headers_for_non_loopback():
+    req = SimpleNamespace(
+        remote_addr="203.0.113.9",
+        headers={"X-Forwarded-For": "198.51.100.40", "X-Real-IP": "198.51.100.41"},
+    )
+    assert _resolve_client_ip(req) == "203.0.113.9"
