@@ -224,9 +224,17 @@ launchctl load   ~/Library/LaunchAgents/jp.ontheroad.tmux-dashboard.tunnel.dev.p
 ## Testing
 
 ```bash
-# backend テスト
-cd backend && ./venv/bin/pytest -q
+# all (backend pytest + frontend typecheck/build)
+./scripts/test.sh
+
+# backend only
+./scripts/test.sh backend
+
+# frontend only
+./scripts/test.sh frontend
 ```
+
+CI でも同じ方針で自動実行されます（`.github/workflows/ci.yml`）。
 
 ---
 

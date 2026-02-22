@@ -23,6 +23,7 @@ frontend/.next/
 dist/
 build/
 coverage/
+*.tsbuildinfo
 
 # Python
 __pycache__/
