@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not found\")",
+      "Bash(codex --help 2>&1 | head -60)",
+      "Bash(codex exec resume --last -m gpt-5.3-codex \"以下は tmux-dashboard（Flask + Next.js 構成）のセキュリティ評価結果です。この評価内容を精査し、見落としや誤り、追加すべき観点があれば指摘してください。\n\n---\n\n## Critical\n1. actions.py の target パラメータ（target_pane, target_session, target_window, window_name, command）が検証なしで subprocess.run\\(\\) のリスト引数に直接追加される。シェルインジェクションはリスト形式で防いでいるが、tmux 側の引数として任意文字列を渡せるため、意図しない tmux 操作が可能。\n\n## High\n2. collectors.py で ps コマンドの args 出力をそのままクライアントに返却。プロセス起動引数にパスワード・APIキー等が含まれる場合に機密情報が漏洩する。\n3. DASHBOARD_AUTH_SECRET 未設定時にプロセス起動ごとランダム生成。本番で再起動のたびに既存トークンが無効化。未設定でも動くため設定漏れに気づきにくい。\n4. actions.py のコマンド失敗時の stderr 全内容がクライアントに返却される。内部パス・システム構成等が漏洩しうる。\n\n## Medium\n5. POST /api/auth/login にレートリミット未実装。ブルートフォース攻撃が可能。\n6. 認証・操作の監査ログがなく、不正アクセスの事後検知ができない。\n7. frontend の paneId パスパラメータに encodeURIComponent は適用済みだが、形式バリデーション（英数字+記号の制限）が不十分。\n\n## 良好と判断した実装\n- mTLS + アプリ認証（Bearer token）の多重防御\n- CRL による証明書単位の即時失効\n- subprocess.run\\(list\\) によるシェルインジェクション防止\n- URLSafeTimedSerializer による署名付きトークン（TTL付き）\n- HttpOnly + Secure + SameSite=lax の Cookie 設定\n- CORS ホワイトリスト方式\n- DASHBOARD_ALLOWED_ACTIONS による操作範囲の環境変数制御\n- backend ポート（10323）を外部非公開、frontend 経由のみ\n- HTTP → HTTPS リダイレクト（Nginx）\n\" 2>&1jk)"
+    ]
+  }
+}
