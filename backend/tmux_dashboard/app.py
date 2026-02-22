@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections import defaultdict, deque
+from time import time
+
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from flask import Flask, jsonify, request
 
@@ -13,9 +16,27 @@ def create_app() -> Flask:
     cfg = load_config()
     serializer = URLSafeTimedSerializer(cfg.auth_secret)
     app.config["DASHBOARD_DEBUG"] = cfg.debug
+    login_attempts: dict[str, deque[float]] = defaultdict(deque)
+    login_lock_until: dict[str, float] = {}
 
     def issue_token(user: str) -> str:
         return serializer.dumps({"sub": user})
+
+    def client_ip() -> str:
+        return request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip() or "unknown"
+
+    def is_login_locked(ip: str, now: float) -> bool:
+        return login_lock_until.get(ip, 0) > now
+
+    def register_login_failure(ip: str, now: float) -> None:
+        attempts = login_attempts[ip]
+        attempts.append(now)
+        window_start = now - cfg.login_window_sec
+        while attempts and attempts[0] < window_start:
+            attempts.popleft()
+        if len(attempts) >= cfg.login_attempt_limit:
+            login_lock_until[ip] = now + cfg.login_lock_sec
+            attempts.clear()
 
     def parse_bearer_token() -> str:
         auth_header = request.headers.get("Authorization", "")
@@ -54,14 +75,25 @@ def create_app() -> Flask:
 
     @app.route("/api/auth/login", methods=["POST"])
     def auth_login():
+        ip = client_ip()
+        now = time()
+        if is_login_locked(ip, now):
+            app.logger.warning("auth.login.locked ip=%s", ip)
+            return jsonify({"ok": False, "error": "too many attempts, try again later"}), 429
+
         payload = request.get_json(silent=True) or {}
         user = str(payload.get("user", "")).strip()
         password = str(payload.get("password", "")).strip()
 
         if user != cfg.auth_user or password != cfg.auth_password:
+            register_login_failure(ip, now)
+            app.logger.warning("auth.login.failed ip=%s user=%s", ip, user or "<empty>")
             return jsonify({"ok": False, "error": "invalid credentials"}), 401
 
         token = issue_token(user)
+        login_attempts.pop(ip, None)
+        login_lock_until.pop(ip, None)
+        app.logger.info("auth.login.success ip=%s user=%s", ip, user)
         return jsonify(
             {
                 "ok": True,
@@ -125,7 +157,27 @@ def create_app() -> Flask:
         payload = request.get_json(silent=True) or {}
         result = execute_action(action, payload)
         if not result.get("ok"):
-            return jsonify(result), 400
+            app.logger.warning(
+                "action.failed user=%s action=%s returncode=%s code=%s stderr=%s stdout=%s",
+                user,
+                action,
+                result.get("returncode"),
+                result.get("code", "TMUX_ACTION_FAILED"),
+                result.get("stderr", ""),
+                result.get("stdout", ""),
+            )
+            return (
+                jsonify(
+                    {
+                        "ok": False,
+                        "error": "action failed",
+                        "code": result.get("code", "TMUX_ACTION_FAILED"),
+                    }
+                ),
+                400,
+            )
+
+        app.logger.info("action.success user=%s action=%s", user, action)
 
         return jsonify(result)
 

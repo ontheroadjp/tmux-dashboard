@@ -29,6 +29,24 @@ def test_auth_login_invalid_credentials():
     assert resp.get_json()["ok"] is False
 
 
+def test_auth_login_rate_limit(monkeypatch):
+    monkeypatch.setenv("DASHBOARD_LOGIN_ATTEMPT_LIMIT", "2")
+    monkeypatch.setenv("DASHBOARD_LOGIN_WINDOW_SEC", "600")
+    monkeypatch.setenv("DASHBOARD_LOGIN_LOCK_SEC", "900")
+    app = create_app()
+    client = app.test_client()
+
+    resp1 = client.post("/api/auth/login", json={"user": "x", "password": "y"})
+    assert resp1.status_code == 401
+
+    resp2 = client.post("/api/auth/login", json={"user": "x", "password": "y"})
+    assert resp2.status_code == 401
+
+    resp3 = client.post("/api/auth/login", json={"user": "x", "password": "y"})
+    assert resp3.status_code == 429
+    assert resp3.get_json()["ok"] is False
+
+
 def _login_and_get_token(client, user: str = "test-user", password: str = "test-password") -> str:
     resp = client.post("/api/auth/login", json={"user": user, "password": password})
     assert resp.status_code == 200
@@ -75,6 +93,32 @@ def test_disabled_action_returns_403(monkeypatch):
     resp = client.post("/api/actions/kill_session", json={"target_session": "x"}, headers=headers)
     assert resp.status_code == 403
     assert resp.get_json()["ok"] is False
+
+
+def test_action_failure_response_is_sanitized(monkeypatch):
+    monkeypatch.setattr(
+        "tmux_dashboard.app.execute_action",
+        lambda action, payload: {
+            "ok": False,
+            "stdout": "internal-stdout",
+            "stderr": "/srv/app/private/path",
+            "returncode": 1,
+            "code": "TMUX_ACTION_FAILED",
+        },
+    )
+    app = create_app()
+    client = app.test_client()
+    token = _login_and_get_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = client.post("/api/actions/send_keys", json={"target_pane": "%1", "keys": ["Enter"]}, headers=headers)
+    assert resp.status_code == 400
+    payload = resp.get_json()
+    assert payload["ok"] is False
+    assert payload["error"] == "action failed"
+    assert payload["code"] == "TMUX_ACTION_FAILED"
+    assert "stderr" not in payload
+    assert "stdout" not in payload
 
 
 def test_pane_detail_requires_auth():
@@ -167,3 +211,17 @@ def test_old_token_remains_valid_after_restart_like_reinit_when_secret_is_fixed(
     resp = client2.get("/api/auth/session", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200
     assert resp.get_json()["authenticated"] is True
+
+
+def test_prod_requires_auth_secret(monkeypatch):
+    monkeypatch.setenv("DASHBOARD_ENV", "prod")
+    monkeypatch.setenv("DASHBOARD_AUTH_USER", "admin")
+    monkeypatch.setenv("DASHBOARD_AUTH_PASSWORD", "hogehoge")
+    monkeypatch.setenv("DASHBOARD_ENV_FILE", "/tmp/tmux_dashboard_nonexistent.env")
+    monkeypatch.delenv("DASHBOARD_AUTH_SECRET", raising=False)
+
+    try:
+        load_config()
+        assert False, "load_config should raise ValueError in production when auth secret is missing"
+    except ValueError as e:
+        assert "DASHBOARD_AUTH_SECRET" in str(e)
