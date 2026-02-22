@@ -43,8 +43,12 @@ launchd/frontend.prod.env
 launchd/*.env
 launchd/start-backend-prod.sh
 launchd/start-frontend-prod.sh
+launchd/start-tunnel-prod.sh
+launchd/start-tunnel-dev.sh
 launchd/jp.ontheroad.tmux-dashboard.backend.prod.plist
 launchd/jp.ontheroad.tmux-dashboard.frontend.prod.plist
+launchd/jp.ontheroad.tmux-dashboard.tunnel.prod.plist
+launchd/jp.ontheroad.tmux-dashboard.tunnel.dev.plist
 launchd/logs/
 *.env
 *.env.local
@@ -54,3 +58,8 @@ backend/.env.dev
 backend/.env.prod
 frontend/.env.dev
 frontend/.env.prod
+tunnel/.env.dev
+tunnel/.env.prod
+# Local nginx tunnel config (keep only server/tunnel.example.conf tracked)
+server/tunnel.*.conf
+!server/tunnel.example.conf
