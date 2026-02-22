@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import subprocess
-from typing import Dict, List
+from typing import Callable, Dict, List
 
 TMUX_COMMAND_TIMEOUT_SEC = 5
 
@@ -40,94 +40,124 @@ def _run_tmux(args: List[str]) -> Dict[str, object]:
     }
 
 
+def _required_text(payload: Dict[str, object], key: str) -> str:
+    value = str(payload.get(key, "")).strip()
+    return value
+
+
+def _action_send_keys(payload: Dict[str, object]) -> Dict[str, object]:
+    target = _required_text(payload, "target_pane")
+    keys = payload.get("keys", "")
+    if not target:
+        return {"ok": False, "error": "target_pane is required"}
+
+    if isinstance(keys, list):
+        key_args = [str(item) for item in keys]
+    else:
+        key_args = [str(keys)]
+
+    # Literal mode is expressed as ["-l", "<text>"] from frontend.
+    # Use explicit tmux option placement to avoid argument parsing ambiguity.
+    if key_args and key_args[0] == "-l":
+        literal_text = key_args[1] if len(key_args) > 1 else ""
+        return _run_tmux(["send-keys", "-l", "-t", target, literal_text])
+
+    return _run_tmux(["send-keys", "-t", target, *key_args])
+
+
+def _action_select_pane(payload: Dict[str, object]) -> Dict[str, object]:
+    target = _required_text(payload, "target_pane")
+    if not target:
+        return {"ok": False, "error": "target_pane is required"}
+    return _run_tmux(["select-pane", "-t", target])
+
+
+def _action_select_window(payload: Dict[str, object]) -> Dict[str, object]:
+    target = _required_text(payload, "target_window")
+    if not target:
+        return {"ok": False, "error": "target_window is required"}
+    return _run_tmux(["select-window", "-t", target])
+
+
+def _action_switch_client(payload: Dict[str, object]) -> Dict[str, object]:
+    target = _required_text(payload, "target_session")
+    if not target:
+        return {"ok": False, "error": "target_session is required"}
+    return _run_tmux(["switch-client", "-t", target])
+
+
+def _action_kill_pane(payload: Dict[str, object]) -> Dict[str, object]:
+    target = _required_text(payload, "target_pane")
+    if not target:
+        return {"ok": False, "error": "target_pane is required"}
+    return _run_tmux(["kill-pane", "-t", target])
+
+
+def _action_kill_window(payload: Dict[str, object]) -> Dict[str, object]:
+    target = _required_text(payload, "target_window")
+    if not target:
+        return {"ok": False, "error": "target_window is required"}
+    return _run_tmux(["kill-window", "-t", target])
+
+
+def _action_kill_session(payload: Dict[str, object]) -> Dict[str, object]:
+    target = _required_text(payload, "target_session")
+    if not target:
+        return {"ok": False, "error": "target_session is required"}
+    return _run_tmux(["kill-session", "-t", target])
+
+
+def _action_new_window(payload: Dict[str, object]) -> Dict[str, object]:
+    args = ["new-window"]
+    target_session = _required_text(payload, "target_session")
+    window_name = _required_text(payload, "window_name")
+    command = _required_text(payload, "command")
+    if target_session:
+        args.extend(["-t", target_session])
+    if window_name:
+        args.extend(["-n", window_name])
+    if command:
+        args.append(command)
+    return _run_tmux(args)
+
+
+def _action_split_window(payload: Dict[str, object]) -> Dict[str, object]:
+    args = ["split-window"]
+    target_pane = _required_text(payload, "target_pane")
+    direction = _required_text(payload, "direction") or "vertical"
+    percentage = _required_text(payload, "percentage")
+    command = _required_text(payload, "command")
+
+    if direction == "horizontal":
+        args.append("-h")
+    else:
+        args.append("-v")
+
+    if target_pane:
+        args.extend(["-t", target_pane])
+    if percentage:
+        args.extend(["-p", percentage])
+    if command:
+        args.append(command)
+
+    return _run_tmux(args)
+
+
+ACTION_HANDLERS: Dict[str, Callable[[Dict[str, object]], Dict[str, object]]] = {
+    "send_keys": _action_send_keys,
+    "select_pane": _action_select_pane,
+    "select_window": _action_select_window,
+    "switch_client": _action_switch_client,
+    "kill_pane": _action_kill_pane,
+    "kill_window": _action_kill_window,
+    "kill_session": _action_kill_session,
+    "new_window": _action_new_window,
+    "split_window": _action_split_window,
+}
+
+
 def execute_action(action: str, payload: Dict[str, object]) -> Dict[str, object]:
-    if action == "send_keys":
-        target = str(payload.get("target_pane", "")).strip()
-        keys = payload.get("keys", "")
-        if not target:
-            return {"ok": False, "error": "target_pane is required"}
-
-        if isinstance(keys, list):
-            key_args = [str(item) for item in keys]
-        else:
-            key_args = [str(keys)]
-
-        # Literal mode is expressed as ["-l", "<text>"] from frontend.
-        # Use explicit tmux option placement to avoid argument parsing ambiguity.
-        if key_args and key_args[0] == "-l":
-            literal_text = key_args[1] if len(key_args) > 1 else ""
-            return _run_tmux(["send-keys", "-l", "-t", target, literal_text])
-
-        return _run_tmux(["send-keys", "-t", target, *key_args])
-
-    if action == "select_pane":
-        target = str(payload.get("target_pane", "")).strip()
-        if not target:
-            return {"ok": False, "error": "target_pane is required"}
-        return _run_tmux(["select-pane", "-t", target])
-
-    if action == "select_window":
-        target = str(payload.get("target_window", "")).strip()
-        if not target:
-            return {"ok": False, "error": "target_window is required"}
-        return _run_tmux(["select-window", "-t", target])
-
-    if action == "switch_client":
-        target = str(payload.get("target_session", "")).strip()
-        if not target:
-            return {"ok": False, "error": "target_session is required"}
-        return _run_tmux(["switch-client", "-t", target])
-
-    if action == "kill_pane":
-        target = str(payload.get("target_pane", "")).strip()
-        if not target:
-            return {"ok": False, "error": "target_pane is required"}
-        return _run_tmux(["kill-pane", "-t", target])
-
-    if action == "kill_window":
-        target = str(payload.get("target_window", "")).strip()
-        if not target:
-            return {"ok": False, "error": "target_window is required"}
-        return _run_tmux(["kill-window", "-t", target])
-
-    if action == "kill_session":
-        target = str(payload.get("target_session", "")).strip()
-        if not target:
-            return {"ok": False, "error": "target_session is required"}
-        return _run_tmux(["kill-session", "-t", target])
-
-    if action == "new_window":
-        args = ["new-window"]
-        target_session = str(payload.get("target_session", "")).strip()
-        window_name = str(payload.get("window_name", "")).strip()
-        command = str(payload.get("command", "")).strip()
-        if target_session:
-            args.extend(["-t", target_session])
-        if window_name:
-            args.extend(["-n", window_name])
-        if command:
-            args.append(command)
-        return _run_tmux(args)
-
-    if action == "split_window":
-        args = ["split-window"]
-        target_pane = str(payload.get("target_pane", "")).strip()
-        direction = str(payload.get("direction", "vertical")).strip()
-        percentage = str(payload.get("percentage", "")).strip()
-        command = str(payload.get("command", "")).strip()
-
-        if direction == "horizontal":
-            args.append("-h")
-        else:
-            args.append("-v")
-
-        if target_pane:
-            args.extend(["-t", target_pane])
-        if percentage:
-            args.extend(["-p", percentage])
-        if command:
-            args.append(command)
-
-        return _run_tmux(args)
-
-    return {"ok": False, "error": f"unsupported action: {action}"}
+    handler = ACTION_HANDLERS.get(action)
+    if handler is None:
+        return {"ok": False, "error": f"unsupported action: {action}"}
+    return handler(payload)
