@@ -4,6 +4,10 @@
 
 - init-docs.md: repo の実態把握と設計ドキュメント再構築。重い初期化。
 - docs-sync.md: 実装差分に追随する軽量同期。HARD STOP 時は /init-docs を要求して終了する。
+- task.md: 実装と docs 整合を段階的に完了し、main 取り込みまで行う標準フロー。
+- refactor.md: 構造的負債を安全に解消する専用フロー。再開ルール・測定ルール・docs同期ルールを含む。
+- security.md: 攻撃者視点で脆弱性を洗い出し、修正と回帰検証まで行う専用フロー。
+- performance.md: 計測根拠ベースで性能改善を行い、回帰検証と改善率を明示する専用フロー。
 
 ## Workflow Orchestration
 
