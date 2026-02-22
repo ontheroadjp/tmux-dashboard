@@ -6,3 +6,4 @@
 - 本番常駐運用（launchd）: `docs/manual/production-launchd.md`
 - 公開運用（SSHトンネル + Nginx）: `docs/manual/tunnel-and-nginx.md`
 - mTLS詳細ガイド（初学者向け）: `docs/manual/mtls-guide.md`
+- CRL失効運用ガイド: `docs/manual/crl-guide.md`

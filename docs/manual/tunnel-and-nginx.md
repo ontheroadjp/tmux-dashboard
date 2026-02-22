@@ -1,14 +1,14 @@
 # Tunnel And Nginx Manual
 
 ## 目的
-- VPS Nginx (`https://tmux.example.com`) から SSH reverse tunnel 経由で Mac 上の本番フロント (`127.0.0.1:10322`) を公開する。
+- VPS Nginx (`https://tmux.example.com`) から SSH reverse tunnel 経由でローカルホスト上の本番フロント (`127.0.0.1:10322`) を公開する。
 
 ## 前提
 - VPS の Nginx は `https://tmux.example.com` を受ける。
 - VPS から `127.0.0.1:<forward_port>` へプロキシする。
-- Mac 側 frontend は `127.0.0.1:10322` で待受する。
+- ローカルホスト側 frontend は `127.0.0.1:10322` で待受する。
 
-## 1. Mac 側で reverse tunnel を起動
+## 1. ローカルホスト側で reverse tunnel を起動
 
 例: `forward_port=110322`
 

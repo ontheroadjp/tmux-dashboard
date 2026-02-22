@@ -8,8 +8,8 @@
 ## 想定構成
 - クライアント: iPhone (Safari 推奨)
 - 公開サーバー: VPS + Nginx (HTTPS終端)
-- アプリ実体: 自宅Mac上の tmux-dashboard
-- 接続経路: Nginx -> SSH reverse tunnel -> Mac frontend (`127.0.0.1:10322`)
+- アプリ実体: ローカルホスト上の tmux-dashboard
+- 接続経路: Nginx -> SSH reverse tunnel -> ローカルホスト frontend (`127.0.0.1:10322`)
 
 ## 1. mTLS とは
 
@@ -130,6 +130,7 @@ sudo openssl pkcs12 -export \
 
 ```nginx
 ssl_client_certificate /etc/nginx/client-ca/ca.crt;
+ssl_crl /etc/nginx/client-ca/ca.crl;
 ssl_verify_client on;
 ssl_verify_depth 2;
 ```
@@ -143,9 +144,9 @@ sudo systemctl reload nginx
 
 ## 5. iPhone への導入
 
-### 5-1. `.p12` を Mac に取得
+### 5-1. `.p12` をローカル端末に取得
 
-Mac で実行:
+ローカル端末で実行:
 
 ```bash
 scp <vps_user>@<vps_host>:/tmp/client-iphone.p12 ~/Downloads/
@@ -159,7 +160,7 @@ sudo cp /etc/nginx/client-ca/client-iphone.p12 /tmp/client-iphone.p12
 sudo chmod 644 /tmp/client-iphone.p12
 ```
 
-### 5-2. Mac -> iPhone
+### 5-2. ローカル端末 -> iPhone
 - AirDrop で `client-iphone.p12` を転送。
 
 ### 5-3. iPhone でインストール
@@ -194,7 +195,7 @@ sudo chmod 644 /tmp/client-iphone.p12
 ## 7. 運用ベストプラクティス
 
 - 端末ごとに別証明書を発行する。
-- 紛失時は該当証明書を失効/再発行する。
+- 紛失時は該当証明書を失効/再発行する（詳細: `docs/manual/crl-guide.md`）。
 - `ca.key` は厳重保管し、サーバー外バックアップを暗号化する。
 - `.p12` 配布後はサーバー上の配布用ファイルを削除する。
 - mTLS だけに頼らず、アプリ側認証 (ID/PW + token) も併用する。

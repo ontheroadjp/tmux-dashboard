@@ -3,6 +3,8 @@ set -euo pipefail
 
 BACKEND_LABEL="jp.ontheroad.tmux-dashboard.backend.prod"
 FRONTEND_LABEL="jp.ontheroad.tmux-dashboard.frontend.prod"
+TUNNEL_LABEL="jp.ontheroad.tmux-dashboard.tunnel.prod"
+TUNNEL_DEV_LABEL="jp.ontheroad.tmux-dashboard.tunnel.dev"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOG_DIR="$REPO_ROOT/launchd/logs"
 SHOW_LOGS="${1:-}"
@@ -21,6 +23,8 @@ print_status() {
 echo "== launchctl status =="
 print_status "$BACKEND_LABEL"
 print_status "$FRONTEND_LABEL"
+print_status "$TUNNEL_LABEL"
+print_status "$TUNNEL_DEV_LABEL"
 
 if [ "$SHOW_LOGS" = "--logs" ]; then
   echo
@@ -29,4 +33,10 @@ if [ "$SHOW_LOGS" = "--logs" ]; then
   echo
   echo "== frontend.prod.err.log (tail -n 40) =="
   tail -n 40 "$LOG_DIR/frontend.prod.err.log" 2>/dev/null || echo "(no log)"
+  echo
+  echo "== tunnel.prod.err.log (tail -n 40) =="
+  tail -n 40 "$LOG_DIR/tunnel.prod.err.log" 2>/dev/null || echo "(no log)"
+  echo
+  echo "== tunnel.dev.err.log (tail -n 40) =="
+  tail -n 40 "$LOG_DIR/tunnel.dev.err.log" 2>/dev/null || echo "(no log)"
 fi
