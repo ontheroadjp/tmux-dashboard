@@ -8,8 +8,8 @@
 ## 想定構成
 - クライアント: iPhone (Safari 推奨)
 - 公開サーバー: VPS + Nginx (HTTPS終端)
-- アプリ実体: 自宅Mac上の tmux-dashboard
-- 接続経路: Nginx -> SSH reverse tunnel -> Mac frontend (`127.0.0.1:10322`)
+- アプリ実体: ローカルホスト上の tmux-dashboard
+- 接続経路: Nginx -> SSH reverse tunnel -> ローカルホスト frontend (`127.0.0.1:10322`)
 
 ## 1. mTLS とは
 
@@ -144,9 +144,9 @@ sudo systemctl reload nginx
 
 ## 5. iPhone への導入
 
-### 5-1. `.p12` を Mac に取得
+### 5-1. `.p12` をローカル端末に取得
 
-Mac で実行:
+ローカル端末で実行:
 
 ```bash
 scp <vps_user>@<vps_host>:/tmp/client-iphone.p12 ~/Downloads/
@@ -160,7 +160,7 @@ sudo cp /etc/nginx/client-ca/client-iphone.p12 /tmp/client-iphone.p12
 sudo chmod 644 /tmp/client-iphone.p12
 ```
 
-### 5-2. Mac -> iPhone
+### 5-2. ローカル端末 -> iPhone
 - AirDrop で `client-iphone.p12` を転送。
 
 ### 5-3. iPhone でインストール
