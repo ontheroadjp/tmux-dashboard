@@ -30,6 +30,33 @@ def _resolve_client_ip(req) -> str:
     return remote_addr or "unknown"
 
 
+def _authenticate_request(req, auth: AuthService) -> str | None:
+    return auth.authenticate_bearer_token(req.headers.get("Authorization", ""))
+
+
+def _add_cors_headers(req, response, cfg: AppConfig):
+    origin = req.headers.get("Origin", "")
+    if cfg.cors_origins and origin in cfg.cors_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+    return response
+
+
+def _action_failed_response(code: str):
+    return (
+        jsonify(
+            {
+                "ok": False,
+                "error": "action failed",
+                "code": code,
+            }
+        ),
+        400,
+    )
+
+
 def register_routes(
     app: Flask,
     cfg: AppConfig,
@@ -44,17 +71,11 @@ def register_routes(
         return _resolve_client_ip(request)
 
     def authenticate_request() -> str | None:
-        return auth.authenticate_bearer_token(request.headers.get("Authorization", ""))
+        return _authenticate_request(request, auth)
 
     @app.after_request
     def add_cors_headers(response):
-        origin = request.headers.get("Origin", "")
-        if cfg.cors_origins and origin in cfg.cors_origins:
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Vary"] = "Origin"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
-            response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
-        return response
+        return _add_cors_headers(request, response, cfg)
 
     @app.route("/api/health", methods=["GET"])
     def health():
@@ -152,16 +173,7 @@ def register_routes(
                 result.get("stderr", ""),
                 result.get("stdout", ""),
             )
-            return (
-                jsonify(
-                    {
-                        "ok": False,
-                        "error": "action failed",
-                        "code": result.get("code", "TMUX_ACTION_FAILED"),
-                    }
-                ),
-                400,
-            )
+            return _action_failed_response(str(result.get("code", "TMUX_ACTION_FAILED")))
 
         app.logger.info("action.success user=%s action=%s", user, action)
 
