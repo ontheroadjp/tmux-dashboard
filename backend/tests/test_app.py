@@ -47,6 +47,55 @@ def test_auth_login_rate_limit(monkeypatch):
     assert resp3.get_json()["ok"] is False
 
 
+def test_auth_login_rate_limit_uses_forwarded_ip_for_loopback_proxy(monkeypatch):
+    monkeypatch.setenv("DASHBOARD_LOGIN_ATTEMPT_LIMIT", "1")
+    monkeypatch.setenv("DASHBOARD_LOGIN_WINDOW_SEC", "600")
+    monkeypatch.setenv("DASHBOARD_LOGIN_LOCK_SEC", "900")
+    app = create_app()
+    client = app.test_client()
+
+    resp1 = client.post(
+        "/api/auth/login",
+        json={"user": "x", "password": "y"},
+        headers={"X-Forwarded-For": "198.51.100.10"},
+    )
+    assert resp1.status_code == 401
+
+    # Different forwarded client IP should not hit the lockout bucket.
+    resp2 = client.post(
+        "/api/auth/login",
+        json={"user": "x", "password": "y"},
+        headers={"X-Forwarded-For": "198.51.100.11"},
+    )
+    assert resp2.status_code == 401
+
+
+def test_auth_login_rate_limit_ignores_forwarded_ip_when_not_loopback(monkeypatch):
+    monkeypatch.setenv("DASHBOARD_LOGIN_ATTEMPT_LIMIT", "1")
+    monkeypatch.setenv("DASHBOARD_LOGIN_WINDOW_SEC", "600")
+    monkeypatch.setenv("DASHBOARD_LOGIN_LOCK_SEC", "900")
+    app = create_app()
+    client = app.test_client()
+
+    resp1 = client.post(
+        "/api/auth/login",
+        json={"user": "x", "password": "y"},
+        headers={"X-Forwarded-For": "198.51.100.20"},
+        environ_overrides={"REMOTE_ADDR": "203.0.113.40"},
+    )
+    assert resp1.status_code == 401
+
+    # For non-loopback remote addresses, lockout is keyed by remote_addr.
+    resp2 = client.post(
+        "/api/auth/login",
+        json={"user": "x", "password": "y"},
+        headers={"X-Forwarded-For": "198.51.100.21"},
+        environ_overrides={"REMOTE_ADDR": "203.0.113.40"},
+    )
+    assert resp2.status_code == 429
+    assert resp2.get_json()["ok"] is False
+
+
 def _login_and_get_token(client, user: str = "test-user", password: str = "test-password") -> str:
     resp = client.post("/api/auth/login", json={"user": user, "password": password})
     assert resp.status_code == 200

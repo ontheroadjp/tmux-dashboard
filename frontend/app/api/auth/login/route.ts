@@ -3,6 +3,8 @@ import { AUTH_COOKIE_NAME, backendUrl } from "../../_shared";
 
 export async function POST(req: NextRequest) {
   const url = backendUrl("/api/auth/login");
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  const realIp = req.headers.get("x-real-ip");
 
   let payload: unknown = {};
   try {
@@ -14,7 +16,11 @@ export async function POST(req: NextRequest) {
   try {
     const resp = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+        ...(realIp ? { "X-Real-IP": realIp } : {}),
+      },
       body: JSON.stringify(payload),
       cache: "no-store",
     });
@@ -52,7 +58,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "network error";
     return NextResponse.json(
-      { ok: false, error: `backend request failed: ${message} (${url})` },
+      { ok: false, error: `backend request failed: ${message}` },
       { status: 502 }
     );
   }
