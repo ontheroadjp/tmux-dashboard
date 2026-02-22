@@ -1,15 +1,23 @@
-# Refactor Todo
+# Performance Todo
 
-- [x] Add safety-net tests for route helper behavior (client IP trust boundary)
-- [x] Commit safety net (`[/refactor:wip] Safety net added`)
-- [x] Extract route helpers from `register_routes` without behavior change
-- [x] Run backend tests
-- [x] Run frontend typecheck/build for regression confidence
-- [x] Commit refactor change
-- [x] Commit regression verification (`[/refactor] Regression verified`)
+- [x] Add safety-net tests for collect_pane_detail fast-path behavior
+- [x] Commit safety net (`[/performance:wip] Safety net added`)
+- [x] Implement pane-detail fast path in collectors
+- [x] Benchmark after (same scenario/conditions as baseline)
+- [x] Run functional regression tests (backend + frontend build)
+- [ ] Commit optimization (`[/performance] ...`)
+- [ ] Commit regression verification (`[/performance] Regression verified`)
 
-## Review
+## Baseline (recorded)
+- Scenario: collect_pane_detail synthetic large tmux state (30x10x4), warmup=10, runs=3, n=200
+- Median: p50=33.377ms, p95=70.461ms, p99=270.068ms, throughput=23.97 ops/s
 
-- backend tests: `cd backend && ./venv/bin/pytest -q` -> `23 passed`
-- frontend checks: `cd frontend && npm run typecheck && npm run build` -> success
-- behavior: no API route/path/status contract changes introduced
+## After (recorded)
+- Scenario: collect_pane_detail synthetic large tmux state (30x10x4), warmup=10, runs=3, n=200
+- Median: p50=0.050ms, p95=0.073ms, p99=0.092ms, throughput=17738.27 ops/s
+
+## Delta
+- p50: -99.85%
+- p95: -99.90%
+- p99: -99.97%
+- throughput: +73884.06%
