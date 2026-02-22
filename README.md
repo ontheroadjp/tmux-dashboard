@@ -139,6 +139,26 @@ launchctl load   ~/Library/LaunchAgents/jp.ontheroad.tmux-dashboard.tunnel.dev.p
 
 ---
 
+## Bootstrap / Doctor
+
+初回セットアップや定期診断は以下を利用できます。
+
+```bash
+# 非破壊セットアップ
+# - 既存 .env は上書きしない
+# - 既存プロセスの start/stop/reload はしない
+./scripts/bootstrap.sh
+
+# 必要時のみ frontend build まで実施
+./scripts/bootstrap.sh --build
+
+# 読み取り専用診断
+./scripts/doctor.sh
+./scripts/doctor.sh --logs
+```
+
+---
+
 ## API
 
 | Method | Path | 認証 | 説明 |
