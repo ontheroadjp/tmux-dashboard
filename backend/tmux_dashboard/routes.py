@@ -1,11 +1,33 @@
 from __future__ import annotations
 
+import ipaddress
 from typing import Callable
 
 from flask import Flask, jsonify, request
 
 from .auth import AuthService
 from .config import AppConfig
+
+
+def _is_loopback_ip(value: str) -> bool:
+    try:
+        return ipaddress.ip_address(value).is_loopback
+    except ValueError:
+        return False
+
+
+def _resolve_client_ip(req) -> str:
+    remote_addr = (req.remote_addr or "").strip()
+    if _is_loopback_ip(remote_addr):
+        forwarded_for = req.headers.get("X-Forwarded-For", "").strip()
+        if forwarded_for:
+            forwarded_ip = forwarded_for.split(",")[0].strip()
+            if forwarded_ip:
+                return forwarded_ip
+        real_ip = req.headers.get("X-Real-IP", "").strip()
+        if real_ip:
+            return real_ip
+    return remote_addr or "unknown"
 
 
 def register_routes(
@@ -19,7 +41,7 @@ def register_routes(
     collect_pane_detail_fn: Callable[[str], dict[str, object] | None],
 ) -> None:
     def client_ip() -> str:
-        return request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip() or "unknown"
+        return _resolve_client_ip(request)
 
     def authenticate_request() -> str | None:
         return auth.authenticate_bearer_token(request.headers.get("Authorization", ""))
