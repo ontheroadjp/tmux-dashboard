@@ -5,5 +5,11 @@
 - [x] Extract route helpers from `register_routes` without behavior change
 - [x] Run backend tests
 - [x] Run frontend typecheck/build for regression confidence
-- [ ] Commit refactor change
-- [ ] Commit regression verification (`[/refactor] Regression verified`)
+- [x] Commit refactor change
+- [x] Commit regression verification (`[/refactor] Regression verified`)
+
+## Review
+
+- backend tests: `cd backend && ./venv/bin/pytest -q` -> `23 passed`
+- frontend checks: `cd frontend && npm run typecheck && npm run build` -> success
+- behavior: no API route/path/status contract changes introduced
