@@ -279,6 +279,76 @@ def test_prod_requires_auth_secret(monkeypatch):
         assert "DASHBOARD_AUTH_SECRET" in str(e)
 
 
+def test_cert_dashboard_endpoints_require_auth():
+    app = create_app()
+    client = app.test_client()
+
+    resp = client.get("/api/certs/devices")
+    assert resp.status_code == 401
+    assert resp.get_json()["ok"] is False
+
+
+def test_cert_dashboard_request_link_and_audit_flow():
+    app = create_app()
+    client = app.test_client()
+    token = _login_and_get_token(client)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    create_req = client.post(
+        "/api/certs/requests",
+        json={"device_name": "iphone-01", "platform": "ios", "note": "owner device"},
+        headers=headers,
+    )
+    assert create_req.status_code == 201
+    request_id = create_req.get_json()["request"]["id"]
+
+    mark_issued = client.post(
+        f"/api/certs/requests/{request_id}/mark-issued",
+        json={
+            "issued_at": "2026-02-23T00:00:00Z",
+            "expires_at": "2027-02-23T00:00:00Z",
+            "cert_cn": "iphone-client-01",
+        },
+        headers=headers,
+    )
+    assert mark_issued.status_code == 200
+    assert mark_issued.get_json()["request"]["status"] == "issued"
+
+    links_resp = client.post(
+        "/api/certs/links",
+        json={"request_id": request_id, "expires_in_sec": 600, "note": "manual delivery"},
+        headers=headers,
+    )
+    assert links_resp.status_code == 201
+    link = links_resp.get_json()["link"]
+    token_value = link["token"]
+    link_id = link["id"]
+
+    distribution = client.get(f"/api/certs/distribution/{token_value}")
+    assert distribution.status_code == 200
+    assert distribution.get_json()["distribution"]["device_name"] == "iphone-01"
+
+    devices = client.get("/api/certs/devices", headers=headers)
+    assert devices.status_code == 200
+    assert len(devices.get_json()["devices"]) == 1
+    assert devices.get_json()["devices"][0]["cert_cn"] == "iphone-client-01"
+
+    revoke = client.post(f"/api/certs/links/{link_id}/revoke", headers=headers)
+    assert revoke.status_code == 200
+    assert revoke.get_json()["link"]["status"] == "revoked"
+
+    distribution_revoked = client.get(f"/api/certs/distribution/{token_value}")
+    assert distribution_revoked.status_code == 404
+
+    audit = client.get("/api/certs/audit", headers=headers)
+    assert audit.status_code == 200
+    actions = [item["action"] for item in audit.get_json()["audit"]]
+    assert "request.create" in actions
+    assert "request.mark_issued" in actions
+    assert "link.create" in actions
+    assert "link.revoke" in actions
+
+
 def test_resolve_client_ip_prefers_forwarded_for_on_loopback():
     req = SimpleNamespace(
         remote_addr="127.0.0.1",

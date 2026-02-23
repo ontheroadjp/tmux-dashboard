@@ -14,6 +14,7 @@ os.environ.setdefault("DASHBOARD_AUTH_PASSWORD", "test-password")
 
 
 @pytest.fixture(autouse=True)
-def _auth_env_defaults(monkeypatch):
+def _auth_env_defaults(monkeypatch, tmp_path):
     monkeypatch.setenv("DASHBOARD_AUTH_USER", "test-user")
     monkeypatch.setenv("DASHBOARD_AUTH_PASSWORD", "test-password")
+    monkeypatch.setenv("DASHBOARD_CERT_DASHBOARD_DATA_FILE", str(tmp_path / "cert_dashboard.json"))
