@@ -216,6 +216,15 @@ export default function PanePage() {
     void runAction("send_keys", { target_pane: targetPaneId, keys: ["Enter"] });
   }
 
+  function onSendEscape() {
+    const targetPaneId = activePaneId || detail?.pane.id || paneIdParam;
+    if (!targetPaneId) {
+      return;
+    }
+
+    void runAction("send_keys", { target_pane: targetPaneId, keys: ["Escape"] });
+  }
+
   function onClearPrompt() {
     setKeys("");
   }
@@ -494,7 +503,10 @@ export default function PanePage() {
                     <Button type="submit" variant="contained" fullWidth disabled={!allowed.has("send_keys") || busy}>send key</Button>
                     <Button type="button" variant="contained" color="error" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onClearPrompt}>clear</Button>
                   </Box>
-                  <Button type="button" variant="outlined" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onSendEnter}>send enter</Button>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 1 }}>
+                    <Button type="button" variant="outlined" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onSendEnter}>send enter</Button>
+                    <Button type="button" variant="outlined" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onSendEscape}>ESC</Button>
+                  </Box>
                 </Stack>
                 </CardContent>
               </Card>
