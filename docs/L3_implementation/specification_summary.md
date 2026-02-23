@@ -64,14 +64,15 @@
   - Pane Info はアコーディオンで折りたたみ可能（初期展開）
   - サブヘッダー（タブ行）は sticky で上端固定される
   - Actions の対象は選択中 pane 固定
-  - Actions は `send key` / `clear` / `send enter` を表示する
+  - Actions は `send key` / `clear` / `send enter` / `ESC` を表示する
   - `keys` 入力欄の初期値は空文字
   - `send key` は `keys` が空欄のとき `send_keys(keys=["C-u"])` を送って tmux プロンプト入力行をクリアする
   - `send key` は `keys` 入力時に `send_keys(keys=["-l", <keys>])` を送って文字列をリテラル送信する
   - backend は `keys=["-l", <keys>]` を `tmux send-keys -l -t <pane> <keys>` として実行する
   - `clear` は tmux には送信せず、`keys` 入力欄を空にする
   - keys 入力欄は multiline（3行）で、入力中フォーカス時はポーリング更新を抑止する
-  - Actions レイアウトは「1段目: keys入力欄（multiline）、2段目: 2:1 幅の send key/clear、3段目: send enter」
+  - `ESC` は `send_keys(keys=["Escape"])` を送信する
+  - Actions レイアウトは「1段目: keys入力欄（multiline）、2段目: 2:1 幅の send key/clear、3段目: 2:1 幅の send enter/ESC」
   - 根拠: `frontend/app/pane/[paneId]/page.tsx:173`
   - 根拠: `frontend/app/pane/[paneId]/page.tsx:194`
   - 根拠: `frontend/app/pane/[paneId]/page.tsx:295`
