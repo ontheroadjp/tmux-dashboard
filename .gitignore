@@ -38,6 +38,7 @@ venv/
 venv/
 backend/venv/
 backend/venv/
+backend/data/
 
 launchd/backend.prod.env
 launchd/frontend.prod.env
