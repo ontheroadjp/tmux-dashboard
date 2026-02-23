@@ -30,6 +30,9 @@
   - 開発: `backend/.env.dev`
   - 本番: `backend/.env.prod`
   - 根拠: `backend/tmux_dashboard/config.py:34`
+- 証明書ダッシュボードのデータ保存先は `DASHBOARD_CERT_DASHBOARD_DATA_FILE`（未設定時は `backend/data/cert_dashboard.json`）
+  - 根拠: `backend/tmux_dashboard/config.py:109`
+  - 根拠: `backend/tmux_dashboard/cert_dashboard.py:40`
 - backend debug 切替は `DASHBOARD_DEBUG`（既定は false）
   - 根拠: `backend/tmux_dashboard/config.py:78`
 - backend CORS は `DASHBOARD_CORS_ORIGINS` に含まれる Origin のみ許可
@@ -48,7 +51,10 @@
   - 根拠: `frontend/app/api/auth/logout/route.ts:1`
 - frontend は `/api/panes/[paneId]` で pane 詳細（出力含む）を backend `/api/panes/<pane_id>` に中継する
   - 根拠: `frontend/app/api/panes/[paneId]/route.ts:1`
-  - 根拠: `backend/tmux_dashboard/app.py:95`
+  - 根拠: `backend/tmux_dashboard/routes.py:140`
+- frontend は `/api/certs/[...segments]` で証明書ダッシュボードAPIを backend `/api/certs/*` に中継する
+  - 根拠: `frontend/app/api/certs/[...segments]/route.ts:1`
+  - 根拠: `backend/tmux_dashboard/routes.py:180`
 - backend 中継先は `BACKEND_API_BASE` 優先、未指定時は `NODE_ENV` で切替
   - development: `http://127.0.0.1:5001`
   - production: `http://127.0.0.1:10323`
