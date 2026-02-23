@@ -6,6 +6,7 @@ from typing import Callable
 from flask import Flask, jsonify, request
 
 from .auth import AuthService
+from .cert_dashboard import CertDashboardService
 from .config import AppConfig
 
 
@@ -61,12 +62,13 @@ def register_routes(
     app: Flask,
     cfg: AppConfig,
     auth: AuthService,
+    cert_dashboard: CertDashboardService,
     *,
     execute_action_fn: Callable[[str, dict[str, object]], dict[str, object]],
     collect_tmux_state_fn: Callable[[], dict[str, object]],
     collect_network_state_fn: Callable[[], dict[str, object]],
     collect_pane_detail_fn: Callable[[str], dict[str, object] | None],
-) -> None:
+    ) -> None:
     def client_ip() -> str:
         return _resolve_client_ip(request)
 
@@ -178,3 +180,102 @@ def register_routes(
         app.logger.info("action.success user=%s action=%s", user, action)
 
         return jsonify(result)
+
+    @app.route("/api/certs/devices", methods=["GET"])
+    def cert_devices():
+        user = authenticate_request()
+        if not user:
+            return jsonify({"ok": False, "error": "unauthorized"}), 401
+        return jsonify({"ok": True, "devices": cert_dashboard.list_devices()})
+
+    @app.route("/api/certs/requests", methods=["GET", "POST"])
+    def cert_requests():
+        user = authenticate_request()
+        if not user:
+            return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+        if request.method == "GET":
+            return jsonify({"ok": True, "requests": cert_dashboard.list_requests()})
+
+        payload = request.get_json(silent=True) or {}
+        device_name = str(payload.get("device_name", "")).strip()
+        if not device_name:
+            return jsonify({"ok": False, "error": "device_name is required"}), 400
+        platform = str(payload.get("platform", "")).strip()
+        note = str(payload.get("note", "")).strip()
+        record = cert_dashboard.create_request(actor=user, device_name=device_name, platform=platform, note=note)
+        return jsonify({"ok": True, "request": record}), 201
+
+    @app.route("/api/certs/requests/<request_id>/mark-issued", methods=["POST"])
+    def cert_mark_issued(request_id: str):
+        user = authenticate_request()
+        if not user:
+            return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+        payload = request.get_json(silent=True) or {}
+        issued_at = str(payload.get("issued_at", "")).strip()
+        expires_at = str(payload.get("expires_at", "")).strip()
+        cert_cn = str(payload.get("cert_cn", "")).strip()
+        if not issued_at or not expires_at or not cert_cn:
+            return jsonify({"ok": False, "error": "issued_at, expires_at and cert_cn are required"}), 400
+        updated = cert_dashboard.mark_request_issued(
+            actor=user,
+            request_id=request_id,
+            issued_at=issued_at,
+            expires_at=expires_at,
+            cert_cn=cert_cn,
+        )
+        if updated is None:
+            return jsonify({"ok": False, "error": "request not found"}), 404
+        return jsonify({"ok": True, "request": updated})
+
+    @app.route("/api/certs/links", methods=["GET", "POST"])
+    def cert_links():
+        user = authenticate_request()
+        if not user:
+            return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+        if request.method == "GET":
+            return jsonify({"ok": True, "links": cert_dashboard.list_links()})
+
+        payload = request.get_json(silent=True) or {}
+        request_id = str(payload.get("request_id", "")).strip()
+        if not request_id:
+            return jsonify({"ok": False, "error": "request_id is required"}), 400
+        note = str(payload.get("note", "")).strip()
+        raw_expires = str(payload.get("expires_in_sec", "600")).strip()
+        try:
+            expires_in_sec = int(raw_expires)
+        except ValueError:
+            expires_in_sec = 600
+        link = cert_dashboard.create_distribution_link(
+            actor=user, request_id=request_id, expires_in_sec=expires_in_sec, note=note
+        )
+        if link is None:
+            return jsonify({"ok": False, "error": "request not found"}), 404
+        return jsonify({"ok": True, "link": link}), 201
+
+    @app.route("/api/certs/links/<link_id>/revoke", methods=["POST"])
+    def cert_revoke_link(link_id: str):
+        user = authenticate_request()
+        if not user:
+            return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+        link = cert_dashboard.revoke_link(actor=user, link_id=link_id)
+        if link is None:
+            return jsonify({"ok": False, "error": "link not found"}), 404
+        return jsonify({"ok": True, "link": link})
+
+    @app.route("/api/certs/audit", methods=["GET"])
+    def cert_audit():
+        user = authenticate_request()
+        if not user:
+            return jsonify({"ok": False, "error": "unauthorized"}), 401
+        return jsonify({"ok": True, "audit": cert_dashboard.list_audit()})
+
+    @app.route("/api/certs/distribution/<token>", methods=["GET"])
+    def cert_distribution(token: str):
+        resolved = cert_dashboard.resolve_distribution_token(token)
+        if resolved is None:
+            return jsonify({"ok": False, "error": "link not found"}), 404
+        return jsonify({"ok": True, "distribution": resolved})
