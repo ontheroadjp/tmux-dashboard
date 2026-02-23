@@ -32,7 +32,6 @@ class AppConfig:
     login_attempt_limit: int
     login_window_sec: int
     login_lock_sec: int
-    cert_dashboard_data_file: str
 
 
 def _backend_root() -> str:
@@ -106,10 +105,6 @@ def load_config() -> AppConfig:
     login_attempt_limit_raw = os.getenv("DASHBOARD_LOGIN_ATTEMPT_LIMIT", "5").strip()
     login_window_sec_raw = os.getenv("DASHBOARD_LOGIN_WINDOW_SEC", "600").strip()
     login_lock_sec_raw = os.getenv("DASHBOARD_LOGIN_LOCK_SEC", "900").strip()
-    cert_dashboard_data_file = os.getenv(
-        "DASHBOARD_CERT_DASHBOARD_DATA_FILE",
-        os.path.join(_backend_root(), "data", "cert_dashboard.json"),
-    ).strip()
     try:
         login_attempt_limit = int(login_attempt_limit_raw)
     except ValueError:
@@ -135,5 +130,4 @@ def load_config() -> AppConfig:
         login_attempt_limit=max(login_attempt_limit, 1),
         login_window_sec=max(login_window_sec, 60),
         login_lock_sec=max(login_lock_sec, 60),
-        cert_dashboard_data_file=cert_dashboard_data_file,
     )

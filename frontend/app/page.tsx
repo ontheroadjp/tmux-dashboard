@@ -235,9 +235,6 @@ export default function Page() {
                 <Button type="submit" variant="contained" disabled={authBusy}>
                   {authBusy ? "logging in..." : "login"}
                 </Button>
-                <Button type="button" variant="text" onClick={() => router.push("/certs")}>
-                  certificate dashboard
-                </Button>
               </Stack>
             </CardContent>
           </Card>
@@ -259,9 +256,6 @@ export default function Page() {
               <Typography variant="h6" component="h1" sx={{ flexGrow: 1 }}>
                 tmux dashboard
               </Typography>
-              <Button size="small" variant="outlined" onClick={() => router.push("/certs")}>
-                certs
-              </Button>
               {currentUser ? <Avatar sx={{ width: 30, height: 30, bgcolor: "primary.main", fontSize: 13 }}>{currentUser.slice(0, 1).toUpperCase()}</Avatar> : null}
               <IconButton color="primary" onClick={onLogout} aria-label="logout">
                 <LogoutIcon />

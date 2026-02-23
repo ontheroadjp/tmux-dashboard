@@ -16,21 +16,7 @@
 - `GET /api/panes/<pane_id>`: 認証済みのみ。pane メタ情報 + pane 現在出力を返す
   - 根拠: `backend/tmux_dashboard/app.py:95`
 - `POST /api/actions/<action>`: 認証済みのみ action 実行
-  - 根拠: `backend/tmux_dashboard/routes.py:151`
-- `GET /api/certs/devices`: 認証済みのみ。証明書デバイス一覧を返す
-  - 根拠: `backend/tmux_dashboard/routes.py:180`
-- `GET/POST /api/certs/requests`: 認証済みのみ。証明書発行リクエスト一覧/作成
-  - 根拠: `backend/tmux_dashboard/routes.py:186`
-- `POST /api/certs/requests/<request_id>/mark-issued`: 認証済みのみ。発行結果を反映
-  - 根拠: `backend/tmux_dashboard/routes.py:202`
-- `GET/POST /api/certs/links`: 認証済みのみ。配布リンク一覧/作成
-  - 根拠: `backend/tmux_dashboard/routes.py:225`
-- `POST /api/certs/links/<link_id>/revoke`: 認証済みのみ。配布リンク失効
-  - 根拠: `backend/tmux_dashboard/routes.py:251`
-- `GET /api/certs/audit`: 認証済みのみ。監査ログ一覧
-  - 根拠: `backend/tmux_dashboard/routes.py:262`
-- `GET /api/certs/distribution/<token>`: 認証不要。配布トークン解決
-  - 根拠: `backend/tmux_dashboard/routes.py:269`
+  - 根拠: `backend/tmux_dashboard/app.py:106`
 
 ## action 実装範囲
 - `send_keys`, `select_pane`, `select_window`, `switch_client`
@@ -97,12 +83,6 @@
 - API 表示（`API: ${API_LABEL}`）は pane 詳細ページではヘッダー内に表示する
   - 根拠: `frontend/app/page.tsx:288`
   - 根拠: `frontend/app/pane/[paneId]/page.tsx:270`
-- トップページ/ログイン画面のヘッダーから証明書ダッシュボード `/certs` に遷移できる
-  - 根拠: `frontend/app/page.tsx:238`
-  - 根拠: `frontend/app/page.tsx:262`
-- `/certs` は発行リクエスト作成、発行反映、配布リンク作成・失効、監査ログ参照を1画面で行う
-  - 根拠: `frontend/app/certs/page.tsx:1`
-  - 根拠: `frontend/lib/certDashboardApi.ts:1`
 - actions API エラー表示は backend の `stderr` を優先して表示する
   - 根拠: `frontend/lib/api.ts:153`
 - `send_keys` の `-l` リテラル送信分岐と `target_pane` 必須は単体テストで検証される
