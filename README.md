@@ -170,13 +170,6 @@ launchctl load   ~/Library/LaunchAgents/jp.ontheroad.tmux-dashboard.tunnel.dev.p
 | GET | `/api/snapshot` | Bearer | tmux状態 + ネットワーク状態 + allowed_actions |
 | GET | `/api/panes/<pane_id>` | Bearer | pane メタ情報 + 現在出力 |
 | POST | `/api/actions/<action>` | Bearer | tmux 操作実行 |
-| GET | `/api/certs/devices` | Bearer | 証明書デバイス台帳を取得 |
-| GET/POST | `/api/certs/requests` | Bearer | 発行リクエスト一覧/作成 |
-| POST | `/api/certs/requests/<request_id>/mark-issued` | Bearer | 手動署名結果を反映 |
-| GET/POST | `/api/certs/links` | Bearer | 配布リンク一覧/作成 |
-| POST | `/api/certs/links/<link_id>/revoke` | Bearer | 配布リンク失効 |
-| GET | `/api/certs/audit` | Bearer | 証明書運用監査ログ取得 |
-| GET | `/api/certs/distribution/<token>` | 不要 | ワンタイム配布情報の参照 |
 
 ---
 
