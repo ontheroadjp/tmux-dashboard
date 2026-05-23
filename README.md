@@ -21,7 +21,7 @@
 
 ```
 [iPhone / Browser]
-       ↓ HTTPS + mTLS (クライアント証明書)
+       ↓ HTTPS + mTLS (クライアント証明書) + CRL（証明書失効リスト）
 [VPS: Nginx]
        ↓ SSH Reverse Tunnel (autossh)
 [localhost: Next.js  :10322 / :4000 (dev)]
@@ -238,7 +238,7 @@ CI でも同じ方針で自動実行されます（`.github/workflows/ci.yml`）
 
 ### Server Config Auto Deploy
 
-`main` へ push（または PR merge）時に `server/**` が変更されている場合、  
+`main` へ push（または PR merge）時に `server/**` が変更されている場合、
 `.github/workflows/deploy-server-config.yml` が実行され、VPS の
 `/etc/nginx/sites-available/tunnel.starton.jp.conf` を自動更新します。
 
