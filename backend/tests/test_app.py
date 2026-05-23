@@ -279,15 +279,23 @@ def test_prod_requires_auth_secret(monkeypatch):
         assert "DASHBOARD_AUTH_SECRET" in str(e)
 
 
-def test_resolve_client_ip_prefers_forwarded_for_on_loopback():
+def test_resolve_client_ip_prefers_real_ip_over_forwarded_for_on_loopback():
     req = SimpleNamespace(
         remote_addr="127.0.0.1",
         headers={"X-Forwarded-For": "198.51.100.10, 127.0.0.1", "X-Real-IP": "198.51.100.20"},
     )
+    assert _resolve_client_ip(req) == "198.51.100.20"
+
+
+def test_resolve_client_ip_falls_back_to_forwarded_for_when_real_ip_absent():
+    req = SimpleNamespace(
+        remote_addr="127.0.0.1",
+        headers={"X-Forwarded-For": "198.51.100.10, 127.0.0.1", "X-Real-IP": ""},
+    )
     assert _resolve_client_ip(req) == "198.51.100.10"
 
 
-def test_resolve_client_ip_falls_back_to_real_ip_on_loopback():
+def test_resolve_client_ip_uses_real_ip_on_ipv6_loopback():
     req = SimpleNamespace(
         remote_addr="::1",
         headers={"X-Forwarded-For": "", "X-Real-IP": "198.51.100.30"},
