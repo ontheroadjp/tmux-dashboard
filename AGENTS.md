@@ -56,6 +56,22 @@
 5. **Document Results**: Close the Issue with a summary comment when done (`gh issue close --comment`)
 6. **Capture Lessons**: Add a comment to the Issue summarizing what went wrong and how to avoid it
 
+## Branch Policy
+
+- 作業は必ず main から branch を切って開始する。main への直接コミットは禁止
+- branch 名は `<type>/<short-description>` 形式。例: `feat/login-rate-limit`, `fix/pane-detail-404`
+- 作業完了後は PR を作成し、main へのマージは PR 経由のみとする
+
+## Commit Policy
+
+- コミットメッセージは [Conventional Commits](https://www.conventionalcommits.org/) に従う
+- フォーマット: `<type>(<scope>): <summary>`
+  - `type`: `feat` / `fix` / `docs` / `refactor` / `test` / `chore` / `ci` / `perf`
+  - `scope`: 変更対象（任意）。例: `backend`, `frontend`, `auth`, `actions`
+  - `summary`: 英語・命令形・小文字始まり・句点なし
+- Breaking change は `!` を type の後に付ける。例: `feat!: drop Python 3.10 support`
+- 1コミット1責務。複数の独立した変更は分けてコミットする
+
 ## Core Principles
 
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.
