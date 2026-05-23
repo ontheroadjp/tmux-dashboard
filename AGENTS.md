@@ -50,6 +50,9 @@
 ## Task Management
 
 1. **Plan First**: Create a GitHub Issue with checkable task items (`gh issue create`)
+   - Issue には必ず **Done Criteria**（終了条件）セクションを含める
+   - Done Criteria は「何が満たされれば完了か」を機械的に判定できる形式で書く
+   - 例: テスト通過・動作確認・ドキュメント更新の各項目をチェックボックスで列挙
 2. **Verify Plan**: Check in with the user before starting implementation
 3. **Track Progress**: Update the Issue body as items complete (`gh issue edit`)
 4. **Explain Changes**: High-level summary at each step as Issue comments (`gh issue comment`)
