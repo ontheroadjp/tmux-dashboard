@@ -24,7 +24,7 @@
 - One task per subagent for focused execution
 
 ### 3. Self-Improvement Loop
-- After ANY correction from the user: update `tasks/lessons.md` with the pattern
+- After ANY correction from the user: add a lesson comment to the relevant GitHub Issue
 - Write rules for yourself that prevent the same mistake
 - Ruthlessly iterate on these lessons until mistake rate drops
 - Review lessons at session start for relevant project
@@ -49,12 +49,31 @@
 
 ## Task Management
 
-1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
-2. **Verify Plan**: Check in before starting implementation
-3. **Track Progress**: Mark items complete as you go
-4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `tasks/todo.md`
-6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
+1. **Plan First**: Create a GitHub Issue with checkable task items (`gh issue create`)
+   - Issue には必ず **Done Criteria**（終了条件）セクションを含める
+   - Done Criteria は「何が満たされれば完了か」を機械的に判定できる形式で書く
+   - 例: テスト通過・動作確認・ドキュメント更新の各項目をチェックボックスで列挙
+2. **Verify Plan**: Check in with the user before starting implementation
+3. **Track Progress**: Update the Issue body as items complete (`gh issue edit`)
+4. **Explain Changes**: High-level summary at each step as Issue comments (`gh issue comment`)
+5. **Document Results**: Close the Issue with a summary comment when done (`gh issue close --comment`)
+6. **Capture Lessons**: Add a comment to the Issue summarizing what went wrong and how to avoid it
+
+## Branch Policy
+
+- 作業は必ず main から branch を切って開始する。main への直接コミットは禁止
+- branch 名は `<type>/<short-description>` 形式。例: `feat/login-rate-limit`, `fix/pane-detail-404`
+- 作業完了後は PR を作成し、main へのマージは PR 経由のみとする
+
+## Commit Policy
+
+- コミットメッセージは [Conventional Commits](https://www.conventionalcommits.org/) に従う
+- フォーマット: `<type>(<scope>): <summary>`
+  - `type`: `feat` / `fix` / `docs` / `refactor` / `test` / `chore` / `ci` / `perf`
+  - `scope`: 変更対象（任意）。例: `backend`, `frontend`, `auth`, `actions`
+  - `summary`: 英語・命令形・小文字始まり・句点なし
+- Breaking change は `!` を type の後に付ける。例: `feat!: drop Python 3.10 support`
+- 1コミット1責務。複数の独立した変更は分けてコミットする
 
 ## Core Principles
 

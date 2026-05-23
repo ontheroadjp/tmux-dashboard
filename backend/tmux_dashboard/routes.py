@@ -19,14 +19,16 @@ def _is_loopback_ip(value: str) -> bool:
 def _resolve_client_ip(req) -> str:
     remote_addr = (req.remote_addr or "").strip()
     if _is_loopback_ip(remote_addr):
+        # Prefer X-Real-IP set by Nginx ($remote_addr) — not spoofable by the client.
+        # Fall back to X-Forwarded-For only when X-Real-IP is absent.
+        real_ip = req.headers.get("X-Real-IP", "").strip()
+        if real_ip:
+            return real_ip
         forwarded_for = req.headers.get("X-Forwarded-For", "").strip()
         if forwarded_for:
             forwarded_ip = forwarded_for.split(",")[0].strip()
             if forwarded_ip:
                 return forwarded_ip
-        real_ip = req.headers.get("X-Real-IP", "").strip()
-        if real_ip:
-            return real_ip
     return remote_addr or "unknown"
 
 

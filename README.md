@@ -21,7 +21,7 @@
 
 ```
 [iPhone / Browser]
-       ↓ HTTPS + mTLS (クライアント証明書)
+       ↓ HTTPS + mTLS (クライアント証明書) + CRL（証明書失効リスト）
 [VPS: Nginx]
        ↓ SSH Reverse Tunnel (autossh)
 [localhost: Next.js  :10322 / :4000 (dev)]
@@ -235,6 +235,24 @@ launchctl load   ~/Library/LaunchAgents/jp.ontheroad.tmux-dashboard.tunnel.dev.p
 ```
 
 CI でも同じ方針で自動実行されます（`.github/workflows/ci.yml`）。
+
+### Server Config Auto Deploy
+
+`main` へ push（または PR merge）時に `server/**` が変更されている場合、
+`.github/workflows/deploy-server-config.yml` が実行され、VPS の
+`/etc/nginx/sites-available/tunnel.starton.jp.conf` を自動更新します。
+
+- 実行条件: `push` to `main` + `server/**` changed
+- デプロイ内容: `server/tunnel.starton.jp.conf` を転送
+- 反映手順: `sudo nginx -t` 成功時のみ `sudo systemctl reload nginx`
+- 失敗時: 直前バックアップへ自動ロールバック
+
+必要な GitHub Secrets:
+
+- `VPS_HOST`
+- `VPS_USER`
+- `VPS_SSH_KEY`
+- `VPS_PORT` (任意。未設定時は `22`)
 
 ---
 
