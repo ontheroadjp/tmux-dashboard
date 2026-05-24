@@ -229,6 +229,12 @@ export default function PanePage() {
     setKeys("");
   }
 
+  function onQuickSend(text: string) {
+    const targetPaneId = activePaneId || detail?.pane.id || paneIdParam;
+    if (!targetPaneId) return;
+    void runAction("send_keys", { target_pane: targetPaneId, keys: ["-l", text] });
+  }
+
   async function onLogout() {
     await logout();
     setIsAuthenticated(false);
@@ -473,9 +479,24 @@ export default function PanePage() {
                   {detail.output || "(empty)"}
                 </Paper>
 
-                <Typography variant="body2" sx={{ mb: 1.5, overflowWrap: "anywhere" }}>
+                <Typography variant="body2" sx={{ mb: 1, overflowWrap: "anywhere" }}>
                   target pane: <strong>{targetPaneId}</strong>
                 </Typography>
+
+                <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                  {["1", "2", "3", "Yes"].map((label) => (
+                    <Button
+                      key={label}
+                      variant="outlined"
+                      size="small"
+                      disabled={!allowed.has("send_keys") || busy}
+                      onClick={() => onQuickSend(label)}
+                      sx={{ minWidth: 44, width: 44, height: 44, p: 0 }}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </Stack>
 
                 <Stack component="form" direction="column" spacing={1} onSubmit={onSendKeys}>
                   <TextField
