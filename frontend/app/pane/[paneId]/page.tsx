@@ -483,7 +483,7 @@ export default function PanePage() {
                   target pane: <strong>{targetPaneId}</strong>
                 </Typography>
 
-                <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, mb: 1.5 }}>
                   {["1", "2", "3", "Yes"].map((label) => (
                     <Button
                       key={label}
@@ -491,12 +491,12 @@ export default function PanePage() {
                       size="small"
                       disabled={!allowed.has("send_keys") || busy}
                       onClick={() => onQuickSend(label)}
-                      sx={{ minWidth: 44, width: 44, height: 44, p: 0 }}
+                      fullWidth
                     >
                       {label}
                     </Button>
                   ))}
-                </Stack>
+                </Box>
 
                 <Stack component="form" direction="column" spacing={1} onSubmit={onSendKeys}>
                   <TextField
