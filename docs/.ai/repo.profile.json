@@ -1,0 +1,28 @@
+{
+  "repo_id": "ontheroadjp/tmux-dashboard",
+  "package_manager": "npm",
+  "python_package_manager": "pip",
+  "doc_roots": [
+    "docs/L0_concept",
+    "docs/L1_project",
+    "docs/L2_development",
+    "docs/L3_implementation",
+    "docs/manual"
+  ],
+  "commands": {
+    "dev": "./dev-up.sh",
+    "backend:install": "cd backend && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
+    "backend:run": "cd backend && ./venv/bin/python run.py",
+    "backend:test": "cd backend && ./venv/bin/pytest -q",
+    "frontend:install": "cd frontend && npm install",
+    "frontend:install:ci": "cd frontend && npm ci",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:typecheck": "cd frontend && npm run typecheck",
+    "test": "./scripts/test.sh",
+    "test:backend": "./scripts/test.sh backend",
+    "test:frontend": "./scripts/test.sh frontend",
+    "bootstrap": "./scripts/bootstrap.sh",
+    "doctor": "./scripts/doctor.sh"
+  }
+}

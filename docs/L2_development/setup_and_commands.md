@@ -48,9 +48,9 @@
   - 根拠: `backend/run.py:8`
 
 ### backend 依存パッケージ
-- `Flask==3.0.3`, `pytest==8.3.5`, `gunicorn==22.0.0`
-- `itsdangerous` は Flask の transitive dependency として利用（`backend/tmux_dashboard/auth.py:7`）
-  - 根拠: `backend/requirements.txt:1`
+- `Flask==3.1.3`, `itsdangerous==2.2.0`, `pytest==8.3.5`, `gunicorn==22.0.0`
+- `itsdangerous` は token 署名のため requirements.txt で明示的にピン留めされている
+  - 根拠: `backend/requirements.txt`（全4行）
 
 ### backend 設定
 - 環境変数ファイル: `DASHBOARD_ENV_FILE` 優先、未指定時は `DASHBOARD_ENV=dev/prod` で `.env.dev` / `.env.prod` を選択

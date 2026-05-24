@@ -256,6 +256,17 @@ CI でも同じ方針で自動実行されます（`.github/workflows/ci.yml`）
 
 ---
 
+## Design Principles
+
+- **バックエンドは外部非公開**: Flask は `127.0.0.1` のみ listen。外部からは SSH リバーストンネル経由の Nginx のみがアクセスできる。
+- **多重防御セキュリティ**: アプリ認証（Bearer token + IP rate limit）+ ネットワーク認証（mTLS）の二層。
+- **機密マスク**: tmux pane のプロセス情報（ps 出力）から password/token/secret/bearer を自動 REDACTED する。
+- **action 情報漏洩防止**: action 失敗レスポンスは `code` のみ返却し `stderr`/`stdout` を露出しない。
+- **No database**: 認証トークンは itsdangerous で自己完結。永続化ストア不要。
+- **macOS launchd**: コンテナなし。LaunchAgent で backend / frontend / tunnel を常駐化。
+
+---
+
 ## Documentation
 
 | ドキュメント | 内容 |
