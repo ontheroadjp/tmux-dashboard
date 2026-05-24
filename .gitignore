@@ -8,6 +8,9 @@ Desktop.ini
 *.swo
 *~
 
+# ai
+.claude/
+
 # Logs
 *.log
 npm-debug.log*
