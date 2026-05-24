@@ -64,9 +64,13 @@ frontend/.env.dev
 frontend/.env.prod
 tunnel/.env.dev
 tunnel/.env.prod
-# Local nginx tunnel config (keep only server/tunnel.example.conf tracked)
+# Local nginx tunnel config (keep only *.conf.example tracked)
 server/tunnel.*.conf
 !server/tunnel.example.conf
+server/nginx/tunnel.*.conf
+!server/nginx/tunnel.*.conf.example
+server/nginx/conf.d/tunnel.*/
+!server/nginx/conf.d/tunnel.YOUR_DOMAIN/
 
 # Local temporary working files
 tmp/

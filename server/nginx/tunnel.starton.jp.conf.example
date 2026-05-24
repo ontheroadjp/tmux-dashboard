@@ -1,0 +1,115 @@
+log_format with_cert '$remote_addr - $remote_user [$time_local] '
+                    '"$request" $status $body_bytes_sent '
+                    '"$ssl_client_verify" '
+                    '"$ssl_client_s_dn"';
+access_log /var/log/nginx/access.log with_cert;
+
+# Include app-specific configurations from the directory created by setup-serve
+include /etc/nginx/conf.d/tunnel.YOUR_DOMAIN/*.conf;
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name
+        host1.YOUR_DOMAIN
+        host2.YOUR_DOMAIN
+        host3.YOUR_DOMAIN
+        app.YOUR_DOMAIN;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl; # managed by Certbot
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    server_tokens off;
+
+    server_name
+        host1.YOUR_DOMAIN
+        host2.YOUR_DOMAIN
+        host3.YOUR_DOMAIN
+        app.YOUR_DOMAIN;
+
+    ssl_certificate /etc/letsencrypt/live/YOUR_CERT_NAME/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/YOUR_CERT_NAME/privkey.pem; # managed by Certbot
+
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 1.1.1.1 valid=300s;
+    resolver_timeout 5s;
+
+    # Require client certificate for all hosts in this server block.
+    # mTLS + crl
+    ssl_client_certificate /etc/nginx/client-ca/ca.crt;
+    # crl replublish command
+    # sudo openssl ca -config openssl.cnf -gencrl -out ca.crl
+    ssl_crl /etc/nginx/client-ca/ca.crl;
+    ssl_verify_client on;
+    ssl_verify_depth 2;
+
+
+    # Return a controlled plain-text 400 when client certificate checks fail.
+    error_page 495 496 497 =400 /__mtls_required;
+    location = /__mtls_required {
+        default_type text/plain;
+        return 400 "client certificate required\n";
+    }
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+
+    # for hot-reload
+    location /_next/webpack-hmr {
+        proxy_pass http://127.0.0.1:$upstream_port;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_buffering off;
+    }
+
+    # for next.js
+    location /_next/ {
+        proxy_pass http://127.0.0.1:$upstream_port;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    # convert upstream failure -> intentional 503
+    proxy_intercept_errors on;
+    error_page 502 504 =503 /__tunnel_down;
+
+    location = /__tunnel_down {
+        default_type text/plain;
+        return 503 "not available\n";
+    }
+
+    # main reverse proxy
+    location / {
+        proxy_pass http://127.0.0.1:$upstream_port;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}

@@ -1,0 +1,8 @@
+# host → local tunnel port
+map $host $upstream_port {
+    default 3000;
+    host1.YOUR_DOMAIN 3000;
+    host2.YOUR_DOMAIN 4000;
+    host3.YOUR_DOMAIN 5000;
+    app.YOUR_DOMAIN   10322;
+}
