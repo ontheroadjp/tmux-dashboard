@@ -499,12 +499,10 @@ export default function PanePage() {
                     fullWidth
                     placeholder="Enter"
                   />
-                  <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 1 }}>
-                    <Button type="submit" variant="contained" fullWidth disabled={!allowed.has("send_keys") || busy}>send key</Button>
+                  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 1 }}>
+                    <Button type="submit" variant="contained" fullWidth disabled={!allowed.has("send_keys") || busy} sx={{ gridRow: "1 / 3" }}>send key</Button>
+                    <Button type="button" variant="outlined" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onSendEnter} sx={{ gridRow: "1 / 3" }}>send enter</Button>
                     <Button type="button" variant="contained" color="error" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onClearPrompt}>clear</Button>
-                  </Box>
-                  <Box sx={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 1 }}>
-                    <Button type="button" variant="outlined" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onSendEnter}>send enter</Button>
                     <Button type="button" variant="outlined" fullWidth disabled={!allowed.has("send_keys") || busy} onClick={onSendEscape}>ESC</Button>
                   </Box>
                 </Stack>
