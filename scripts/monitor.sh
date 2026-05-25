@@ -106,6 +106,29 @@ print_frontend_dev_row() {
   fi
 }
 
+print_build_status() {
+  local build_id_file="$REPO_ROOT/frontend/.next/BUILD_ID"
+  local rsf_file="$REPO_ROOT/frontend/.next/required-server-files.json"
+
+  local build_id_val build_id_col rsf_col
+
+  if [ -f "$build_id_file" ]; then
+    build_id_val="$(cat "$build_id_file" 2>/dev/null)"
+    build_id_col="${GREEN}✓${NC} ${DIM}${build_id_val}${NC}"
+  else
+    build_id_col="${RED}✗ missing${NC}"
+  fi
+
+  if [ -f "$rsf_file" ]; then
+    rsf_col="${GREEN}✓${NC}"
+  else
+    rsf_col="${RED}✗ missing${NC}"
+  fi
+
+  printf "  %-28s %b\n" "BUILD_ID" "$build_id_col"
+  printf "  %-28s %b\n" "required-server-files.json" "$rsf_col"
+}
+
 print_tunnel_row() {
   local label_full="jp.ontheroad.tmux-dashboard.tunnel.prod"
   local raw pid exit_code status_col
@@ -136,6 +159,10 @@ printf "${BOLD}PROD (launchd)${NC}\n"
 print_launchd_row "backend"  "jp.ontheroad.tmux-dashboard.backend.prod"  "10323"
 print_launchd_row "frontend" "jp.ontheroad.tmux-dashboard.frontend.prod" "10322"
 print_tunnel_row
+echo
+
+printf "${BOLD}FRONTEND BUILD (.next)${NC}\n"
+print_build_status
 echo
 
 printf "${BOLD}DEV${NC}\n"
