@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -111,4 +113,25 @@ echo
 printf "${BOLD}DEV${NC}\n"
 print_port_row "backend"  "5001"
 print_port_row "frontend" "4000"
+echo
+
+print_env_row() {
+  local path="$1"
+  local rel="${path#"$REPO_ROOT/"}"
+  if [ -f "$path" ]; then
+    printf "  %-28s %b\n" "$rel" "${GREEN}✓${NC}"
+  else
+    printf "  %-28s %b\n" "$rel" "${RED}✗ not found${NC}"
+  fi
+}
+
+printf "${BOLD}ENV FILES${NC}\n"
+printf "  ${DIM}PROD${NC}\n"
+print_env_row "$REPO_ROOT/backend/.env.prod"
+print_env_row "$REPO_ROOT/frontend/.env.prod"
+print_env_row "$REPO_ROOT/tunnel/.env.prod"
+printf "  ${DIM}DEV${NC}\n"
+print_env_row "$REPO_ROOT/backend/.env.dev"
+print_env_row "$REPO_ROOT/frontend/.env.dev"
+print_env_row "$REPO_ROOT/tunnel/.env.dev"
 echo
