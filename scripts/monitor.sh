@@ -78,6 +78,34 @@ print_port_row() {
   printf "  %-12s %b  %b\n" "$label" "$status_col" "$port_col"
 }
 
+print_frontend_dev_row() {
+  local port="4000"
+  local env_file="$REPO_ROOT/frontend/.env.dev"
+
+  local pid
+  pid="$(port_pid "$port" 2>/dev/null || true)"
+
+  local status_col port_col
+  if [ -n "$pid" ]; then
+    status_col="${icon_ok} ${GREEN}running${NC}  pid:${pid}"
+    port_col="${GREEN}:${port} ✓${NC}"
+    printf "  %-12s %b  %b\n" "frontend" "$status_col" "$port_col"
+
+    local backend_url backend_port
+    backend_url="$(grep -E '^BACKEND_API_BASE=' "$env_file" 2>/dev/null | cut -d'=' -f2-)"
+    if [ -z "$backend_url" ]; then
+      backend_port="5001"
+    else
+      backend_port="$(echo "$backend_url" | grep -oE '[0-9]+$')"
+    fi
+    printf "%b\n" "               ${DIM}↳ backend :${backend_port}  switch: edit BACKEND_API_BASE in frontend/.env.dev${NC}"
+  else
+    status_col="${icon_stopped} ${DIM}stopped${NC}"
+    port_col="${DIM}:${port} ✗${NC}"
+    printf "  %-12s %b  %b\n" "frontend" "$status_col" "$port_col"
+  fi
+}
+
 print_tunnel_row() {
   local label_full="jp.ontheroad.tmux-dashboard.tunnel.prod"
   local raw pid exit_code status_col
@@ -112,7 +140,7 @@ echo
 
 printf "${BOLD}DEV${NC}\n"
 print_port_row "backend"  "5001"
-print_port_row "frontend" "4000"
+print_frontend_dev_row
 echo
 
 print_env_row() {
