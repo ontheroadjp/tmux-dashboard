@@ -133,5 +133,5 @@ print_env_row "$REPO_ROOT/tunnel/.env.prod"
 printf "  ${DIM}DEV${NC}\n"
 print_env_row "$REPO_ROOT/backend/.env.dev"
 print_env_row "$REPO_ROOT/frontend/.env.dev"
-print_env_row "$REPO_ROOT/tunnel/.env.dev"
+printf "  %-28s %b\n" "tunnel/.env.dev" "${DIM}N/A (not required)${NC}"
 echo
