@@ -62,9 +62,28 @@ npm install
 cd ..
 cp backend/.env.dev.example backend/.env.dev
 cp frontend/.env.dev.example frontend/.env.dev
+```
 
-# 3) start both servers
-./dev-up.sh
+### Frontend development (default)
+
+The launchd prod backend (port 10323) serves as the backend. Only the frontend dev server is needed:
+
+```bash
+cd frontend && npm run dev
+```
+
+- Frontend: `http://127.0.0.1:4000`
+
+### Backend development
+
+Run the dev backend alongside the prod backend — they use different ports and do not conflict:
+
+```bash
+# terminal 1 — dev backend (port 5001)
+cd backend && ./venv/bin/python run.py
+
+# terminal 2 — frontend dev (connects to port 5001)
+cd frontend && npm run dev
 ```
 
 - Frontend: `http://127.0.0.1:4000`
