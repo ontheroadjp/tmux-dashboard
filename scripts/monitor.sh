@@ -125,6 +125,23 @@ print_env_row() {
   fi
 }
 
+print_dev_credentials() {
+  local env_file="$REPO_ROOT/backend/.env.dev"
+  local user pass
+  if [ -f "$env_file" ]; then
+    user="$(grep -E '^DASHBOARD_AUTH_USER=' "$env_file" | cut -d'=' -f2-)"
+    pass="$(grep -E '^DASHBOARD_AUTH_PASSWORD=' "$env_file" | cut -d'=' -f2-)"
+    printf "  %-12s %b\n" "user" "${GREEN}${user:-N/A}${NC}"
+    printf "  %-12s %b\n" "password" "${GREEN}${pass:-N/A}${NC}"
+  else
+    printf "  %b\n" "${RED}backend/.env.dev not found${NC}"
+  fi
+}
+
+printf "${BOLD}DEV LOGIN${NC}\n"
+print_dev_credentials
+echo
+
 printf "${BOLD}ENV FILES${NC}\n"
 printf "  ${DIM}PROD${NC}\n"
 print_env_row "$REPO_ROOT/backend/.env.prod"
