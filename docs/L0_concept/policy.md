@@ -2,65 +2,56 @@
 
 ## 技術選定ポリシー
 
-### バックエンド
+### Backend
 
-- **Flask（Python）**: 軽量 HTTP サーバーとして選定。ORM・DB は不要（tmux CLI 操作のみ）。
-  - 根拠: `backend/requirements.txt:1`
-- **itsdangerous（URLSafeTimedSerializer）**: Bearer token の署名・検証に使用。JWT ライブラリを外部依存せず済む最小構成。
-  - 根拠: `backend/tmux_dashboard/auth.py:7`, `backend/requirements.txt:2`
-- **gunicorn**: 本番 WSGI サーバー。
-  - 根拠: `backend/requirements.txt:3`
-- **No database**: 認証状態はトークンに自己完結させ、永続化ストアを持たない。ログイン試行カウントはプロセス内メモリで管理（再起動でリセット）。
-  - 根拠: `backend/tmux_dashboard/auth.py:18`（in-memory dict）
+Flask の application factory で設定、認証、collector、action を組み合わせる。tmux と OS コマンドを直接呼び出す小規模 API であり、DB や ORM は導入していない。本番は gunicorn、開発は Flask development server を使う。
 
-### フロントエンド
+なぜ: HTTP API とローカル CLI の橋渡しに責務を限定し、永続化レイヤを持たない構成を維持するため。
 
-- **Next.js 15 + React 19**: App Router を使用。
-  - 根拠: `frontend/package.json:15`
-- **Material UI v7（Material Design 3）**: 一貫した UI コンポーネント。
-  - 根拠: `frontend/package.json:11-14`
-- **npm**: パッケージマネージャー。
-  - 根拠: `frontend/package-lock.json`（存在）
-- **Next.js route handler が認証中継**: Bearer token を HttpOnly cookie に格納することで、クライアント JS から token を隠蔽する。
-  - 根拠: `frontend/app/api/auth/login/route.ts`
+根拠: `backend/tmux_dashboard/app.py:12-26`, `backend/run.py:3-10`, `backend/requirements.txt:1-4`, `launchd/templates/start-backend-prod.sh.tmpl:20-31`
 
-### インフラ
+### Frontend
 
-- **macOS launchd**: Docker/コンテナなし。macOS の LaunchAgent で backend / frontend / tunnel を永続化。
-  - 根拠: `launchd/*.plist`
-- **autossh**: SSH リバーストンネルの自動再接続。VPS Nginx ↔ ローカル間の安定した中継。
-  - 根拠: `launchd/start-tunnel-prod.sh`
+Next.js App Router と React を使い、UI は MUI と Emotion で構成する。ブラウザ向け API は Next.js Route Handler が backend へ中継する。
+
+なぜ: UI と backend token の cookie 管理を同じ frontend サービスに集約し、ブラウザから backend を隠すため。
+
+根拠: `frontend/package.json:11-25`, `frontend/app/api/_shared.ts:3-20`, `frontend/app/api/auth/login/route.ts:43-55`
+
+### Runtime
+
+macOS launchd が backend、frontend、autossh tunnel を常駐化する。runtime ファイルは追跡対象の template からローカル生成し、生成物自体は Git 管理しない。
+
+なぜ: リポジトリの配置パスを template に固定せず、各 checkout で正しい絶対パスを埋め込むため。
+
+根拠: `launchd/render-prod-files.sh:4-24`, `.gitignore:45-56`, `launchd/templates/*.tmpl`
 
 ## セキュリティ方針
 
-1. **多重防御**: アプリ認証（ID/Password + Bearer token）+ ネットワーク認証（mTLS）の二層。
-2. **rate limiting**: IP ごとのログイン試行上限（既定 5 回 / 600 秒ウィンドウ、超過で 900 秒ロック）。
-   - 根拠: `backend/tmux_dashboard/config.py:103`
-3. **機密マスク**: tmux pane のプロセス情報（`ps` 出力）から password/token/secret/bearer を `[REDACTED]` に置換してからクライアントに返す。
-   - 根拠: `backend/tmux_dashboard/collectors.py:9`
-4. **action 失敗時の情報漏洩防止**: action 失敗レスポンスには `code` のみを返し、`stderr`/`stdout` を外部に露出しない。
-   - 根拠: `backend/tmux_dashboard/routes.py:47`
-5. **CRL（証明書失効リスト）**: Nginx で端末単位の即時無効化が可能。
-   - 根拠: `docs/manual/crl-guide.md`
-6. **prod では `DASHBOARD_AUTH_SECRET` 必須**: 未設定時に起動失敗させ、意図しないランダム鍵での本番稼働を防ぐ。
-   - 根拠: `backend/tmux_dashboard/config.py:87`
-7. **IP 解決の優先順位**: remote_addr がループバックの場合のみ `X-Real-IP` → `X-Forwarded-For` を信頼（Nginx `$remote_addr` が `X-Real-IP` に入る前提）。非ループバック接続ではヘッダーを無視。
-   - 根拠: `backend/tmux_dashboard/routes.py:19`
+- Backend と frontend は loopback bind を維持する。根拠: `backend/run.py:10`, `launchd/templates/start-backend-prod.sh.tmpl:28`, `launchd/templates/start-frontend-prod.sh.tmpl:34`
+- VPS Nginx は HTTPS、mTLS、CRL を設定し、client certificate を要求する。根拠: `server/nginx/tunnel.starton.jp.conf.example:31-68`
+- アプリ認証は ID/password と有効期限付き署名 token を使う。根拠: `backend/tmux_dashboard/auth.py:12-38`, `backend/tmux_dashboard/routes.py:86-122`
+- production では `DASHBOARD_AUTH_SECRET` を必須とする。根拠: `backend/tmux_dashboard/config.py:75-89`, `launchd/templates/start-backend-prod.sh.tmpl:14-18`
+- ログイン失敗は client IP ごとに回数制限する。proxy header は接続元が loopback の場合だけ参照する。根拠: `backend/tmux_dashboard/routes.py:19-32`, `backend/tmux_dashboard/auth.py:40-55`
+- pane/SSH の command 表示では password、token、secret、API key、Bearer token をマスクする。根拠: `backend/tmux_dashboard/collectors.py:8-24`
+- action 失敗の HTTP response には stdout/stderr を含めず、詳細は server log に限定する。根拠: `backend/tmux_dashboard/routes.py:49-59`, `backend/tmux_dashboard/routes.py:168-178`
+- 実行可能 action は `DASHBOARD_ALLOWED_ACTIONS` で制限する。根拠: `backend/tmux_dashboard/config.py:8-18`, `backend/tmux_dashboard/config.py:66-72`, `backend/tmux_dashboard/routes.py:163-164`
 
-## パフォーマンス要件
+## パフォーマンス方針
 
-- **3 秒ポーリング**: フロントエンドは 3 秒間隔で `/api/snapshot` を取得する。tmux 状態が大きくなっても許容されること。
-  - 根拠: `frontend/app/page.tsx:39`
-- **タイムアウト 5 秒**: tmux/ps コマンド呼び出しに 5 秒タイムアウトを設ける。
-  - 根拠: `backend/tmux_dashboard/collectors.py:8`, `backend/tmux_dashboard/actions.py:4`
+- UI は snapshot と pane detail を 3 秒間隔で更新する。根拠: `frontend/app/page.tsx:35`, `frontend/app/page.tsx:77-86`, `frontend/app/pane/[paneId]/page.tsx`
+- tmux、ps、lsof の subprocess は 5 秒で timeout する。根拠: `backend/tmux_dashboard/collectors.py:8`, `backend/tmux_dashboard/collectors.py:27-34`, `backend/tmux_dashboard/actions.py:6-24`
+- collector は取得失敗時に空状態を返し、dashboard 全体の例外へ直結させない。根拠: `backend/tmux_dashboard/collectors.py:27-34`, `backend/tmux_dashboard/collectors.py:58-76`
 
-## 禁止事項・制約
+## 禁止事項・変更時の制約
 
-- **直接 tmux コマンド拡張は慎重に**: `allowed_actions` に載っていない action は 403 で拒否される。新 action を追加する場合は `config.py:9` の `DEFAULT_ACTIONS` と `actions.py` の dispatch 分岐を同時に変更すること。
-  - 根拠: `backend/tmux_dashboard/routes.py:152`, `backend/tmux_dashboard/config.py:9`
-- **DB 導入禁止（ポリシー）**: 認証セッションを永続化する場合は Redis 等を検討すべきだが、現時点では個人利用のため不要。
-- **コンテナ化しない**: macOS launchd 前提の設計。Dockerfile は存在しない。
+- backend や frontend を外部インターフェースへ直接 bind しない。
+- 新しい action は handler だけでなく `DEFAULT_ACTIONS`、API 制御、テストを同時に更新する。根拠: `backend/tmux_dashboard/actions.py:146-163`, `backend/tmux_dashboard/config.py:8-18`
+- response に tmux の stdout/stderr や未マスクの command を追加しない。
+- 生成済み `launchd/start-*.sh` と `launchd/*.plist` を source of truth にしない。変更対象は `launchd/templates/` と `launchd/render-prod-files.sh` である。根拠: `.gitignore:45-56`, `launchd/render-prod-files.sh:15-24`
+- DB 導入やコンテナ化は、現在の構成からの設計変更として L0 と運用文書を先に再評価する。
 
 ## 未確認事項
 
-- なし
+- rate limit を複数 gunicorn worker 間で共有する要件。理由: 現状は worker 内メモリであり、共有ストアはない。確認先: 運用要件と `backend/tmux_dashboard/auth.py`。
+- action の監査ログ保持期間。理由: application log 出力はあるが rotation/retention 定義がない。確認先: launchd ログ運用または外部 logrotate 設定。

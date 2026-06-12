@@ -2,46 +2,51 @@
 
 ## プロダクトの目的
 
-ローカル Mac 上の tmux セッション・ウインドウ・pane の状態をブラウザ（iPhone を含むスマホ）から確認・操作できる Web ダッシュボードを提供する。
+tmux-dashboard は、ローカル Mac 上の tmux セッション、window、pane をブラウザから確認し、許可された操作を実行するための Web ダッシュボードである。トップ画面は tmux とネットワークの状態を取得し、pane 詳細画面は出力表示とキー送信を提供する。
 
-根拠: `README.md:3`
+根拠: `README.md:1-30`, `frontend/app/page.tsx:35-170`, `frontend/app/pane/[paneId]/page.tsx`, `backend/tmux_dashboard/routes.py:128-182`
 
 ## 解決する問題
 
-- tmux の状態確認・操作がローカル端末でしかできない（外出先・スマホから参照できない）
-- SSH 直接接続なしに tmux 操作コマンドを安全に発行できる仕組みがない
+- tmux の状態確認をローカル端末に限定せず、スマートフォンを含むブラウザから行えるようにする。
+- SSH シェルを直接操作せず、アプリケーションが許可した tmux action だけを HTTP API 経由で実行する。
+- tmux と同じ Mac 上の listening server、SSH 接続、SSH tunnel 候補を同じ snapshot で確認する。
+
+根拠: `backend/tmux_dashboard/collectors.py:58-207`, `backend/tmux_dashboard/actions.py:146-163`, `backend/tmux_dashboard/routes.py:128-178`
 
 ## 対象ユーザー
 
-個人開発者（作者本人）。macOS 上で tmux を常用し、外部端末（主に iPhone）から tmux セッションを参照・操作したい。
+README と運用定義が示す対象環境は、tmux と launchd を利用する macOS ホスト、およびそのホストへ VPS 経由で接続するブラウザである。利用者の人数や組織形態はリポジトリから確定できない。
 
-## アーキテクチャ上の設計制約
+根拠: `README.md:1-40`, `launchd/templates/jp.ontheroad.tmux-dashboard.backend.prod.plist.tmpl:1-34`
 
-```
-[iPhone / Browser]
-       ↓ HTTPS + mTLS（クライアント証明書）
-[VPS: Nginx]
-       ↓ SSH Reverse Tunnel（autossh）
-[localhost: Next.js  :4000 (dev) / :10322 (prod)]
-       ↓ HTTP（same host）
-[localhost: Flask    :5001 (dev) / :10323 (prod)]
-       ↓ CLI
-[tmux]
-```
+## 設計上の制約
 
-根拠: `README.md:22`
+### ローカルサービスを直接公開しない
 
-### 制約の意味
+開発用 Flask は `127.0.0.1` に bind し、本番 backend と frontend も launchd の起動スクリプトで loopback に bind する。外部接続は autossh の reverse tunnel と VPS Nginx を経由する。
 
-- **バックエンドは外部公開しない**: Flask の listen は `127.0.0.1` 固定。外部から直接叩けない。
-  - 根拠: `backend/run.py:8`
-- **フロントエンドも直接公開しない**: SSH リバーストンネル（autossh）経由で VPS Nginx に中継させる。ローカル IP 以外からのアクセスは届かない構成。
-  - 根拠: `launchd/start-tunnel-prod.sh`
-- **mTLS で端末認証**: VPS の Nginx がクライアント証明書を要求し、証明書のない端末をブロックする。
-  - 根拠: `server/tunnel.starton.jp.conf`（ssl_verify_client 設定）
-- **macOS launchd で常駐化**: Docker/k8s は使用しない。macOS の標準プロセス管理（LaunchAgent）で backend / frontend / tunnel を常駐させる。
-  - 根拠: `launchd/*.plist`
+なぜ: tmux を操作できる API とローカルプロセス情報を、ホストの外部インターフェースへ直接露出しないため。
+
+根拠: `backend/run.py:7-10`, `launchd/templates/start-backend-prod.sh.tmpl:25-31`, `launchd/templates/start-frontend-prod.sh.tmpl:28-34`, `launchd/templates/start-tunnel-prod.sh.tmpl:21-34`
+
+### frontend を認証境界として使う
+
+ブラウザは通常 same-origin の Next.js Route Handler を利用する。Route Handler は backend の Bearer token を HttpOnly cookie に保存し、backend リクエスト時に Authorization header へ変換する。
+
+なぜ: token をクライアント JavaScript から直接参照させず、backend をブラウザへ直接公開しないため。
+
+根拠: `frontend/app/api/auth/login/route.ts:43-55`, `frontend/app/api/_shared.ts:11-20`, `frontend/app/api/snapshot/route.ts:4-15`
+
+### 永続データストアを持たない
+
+認証 token は署名付きデータとして自己完結し、ログイン失敗回数は backend プロセスのメモリに保持する。DB、migration、ORM は存在しない。
+
+なぜ: 現在の機能は tmux と OS の実行時状態を参照・操作するものであり、永続モデルを必要としていないため。
+
+根拠: `backend/tmux_dashboard/auth.py:12-55`, `backend/requirements.txt:1-4`
 
 ## 未確認事項
 
-- なし（上記はすべてコード・設定ファイルから確認）
+- 想定利用者数と同時アクセス数。理由: 要件や負荷試験が存在しない。確認先: 新たなプロダクト要件文書または運用メトリクス。
+- 対応ブラウザの明示的な範囲。理由: browserslist や E2E 対象定義が存在しない。確認先: `frontend/package.json` への設定追加またはブラウザ試験定義。
