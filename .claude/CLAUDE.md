@@ -1,51 +1,55 @@
-# tmux-dashboard — CLAUDE.md
+# tmux-dashboard - CLAUDE.md
 
-このファイルはグローバル `~/.claude/CLAUDE.md` を補完するプロジェクト固有の AI 運用起点です。
+このファイルはプロジェクト固有の AI 運用起点である。
 
 ## コンテキスト取得
 
-作業開始時に `README.md` の以下のセクションを読んでプロジェクト固有のコンテキストを把握すること:
+作業開始時に `README.md` の以下を確認する:
 
-- **概要 / 主要機能**: 実装済み機能一覧
-- **Design Principles**: 守るべき設計制約
-- **Quick Start**: run/build/test コマンド
+- `Features`: 実装済み機能
+- `Usage`: run/build/test/operation command
+- `Design Principles`: 変更時に維持する制約
 
-詳細は `docs/` 以下を参照:
-- `docs/L0_concept/`: プロダクトコンセプト・セキュリティポリシー
-- `docs/L1_project/`: プロジェクト全体像・リポジトリ構造
-- `docs/L2_development/`: セットアップ・テスト・CI/CD
-- `docs/L3_implementation/`: 実装仕様・API 詳細
+詳細調査の入口:
 
-## run / build / test コマンド
+- 実装責務: `docs/L3_implementation/specification_summary.md`
+- repository 構造: `docs/L1_project/repository_structure.md`
+- API: `docs/L3_implementation/api.md`
+- 開発運用: `docs/L2_development/operation_model.md`
 
-| 目的 | コマンド |
+## Commands
+
+| 目的 | Command |
 |---|---|
-| frontend 開発起動 | `cd frontend && npm run dev` |
-| backend 開発起動 | `cd backend && ./venv/bin/python run.py` |
-| backend インストール | `cd backend && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt` |
-| backend テスト | `cd backend && ./venv/bin/pytest -q` |
-| frontend インストール | `cd frontend && npm install` |
-| frontend 型検査 | `cd frontend && npm run typecheck` |
-| frontend ビルド | `cd frontend && npm run build` |
-| 全テスト | `./scripts/test.sh` |
-| backend のみ | `./scripts/test.sh backend` |
-| frontend のみ | `./scripts/test.sh frontend` |
+| bootstrap | `./scripts/bootstrap.sh` |
+| frontend 開発 | `cd frontend && npm run dev` |
+| backend 開発 | `cd backend && ./venv/bin/python run.py` |
+| 全 test | `./scripts/test.sh` |
+| backend test | `./scripts/test.sh backend` |
+| frontend check | `./scripts/test.sh frontend` |
+| read-only 診断 | `./scripts/doctor.sh` |
+| 状態表示 | `./scripts/monitor.sh` |
+| launchd runtime 生成 | `./launchd/render-prod-files.sh` |
 
-根拠: `docs/L2_development/setup_and_commands.md`
+Command の source of truth: `docs/.ai/repo.profile.json`
 
-## Custom Command の使い分け（AI 向けルール）
+## Custom / Command の使い分け（AI向けルール）
 
-グローバル CLAUDE.md のルールに従う。本プロジェクトでは:
+- `review-resolve.md`: PR review comment 対応専用。checkout、実装、commit、push、reply を自己完結させる。
+- `work.md`: review-resolve 以外の作業の入口。gate、workspace、調査、routing を行う。
+- `task.md`: ドキュメント変更を伴う実装に特化。issue 自動生成から実装、draft PR 作成まで行い、`docs/*` 自体は変更しない。
+- `patch.md`: ドキュメント変更を伴わない軽微な修正に特化。issue/PR は不要で、branch + commit 後にユーザーが main へ merge する。scope が広がった場合は task へ移行する。
+- `docs-sync.md`: git diff を事実として docs を最小更新し、draft PR を公開する。HARD STOP 時は `/init-docs` を要求して終了する。
+- `init-docs.md`: repository の実態把握と設計ドキュメント再構築を行う重い初期化。docs-sync で説明不能になった場合に使用する。
+- `new-issue.md`: 漠然とした要望を issue に整形する任意の pre-work entrypoint。実装は行わない。
 
-- `docs/*` への変更が必要な場合 → task フロー（`/work` → task.md）
-- `docs/*` 変更不要の場合 → patch フロー（`/work` → patch.md）
+通常作業は `/work`、PR review comment 対応は `/review-resolve` を使用する。
 
-ルーティング判定: 「この変更で `docs/*` への追加・変更・削除が必要か？」
+## Repository Constraints
 
-## 技術スタック（参考）
-
-- Backend: Python 3.12, Flask 3.1.3, gunicorn 22.0.0
-- Frontend: Next.js 15, React 19, TypeScript 5.8, MUI v7（Material Design 3）
-- Package manager: pip（backend）/ npm（frontend）
-- CI: GitHub Actions（`.github/workflows/ci.yml`）
-- Infra: macOS launchd + autossh + VPS Nginx（mTLS）
+- Backend/frontend は loopback bind を維持する。
+- action 追加時は `backend/tmux_dashboard/config.py`、`actions.py`、route/test/docs を同時に確認する。
+- stdout/stderr や未マスク secret を API response に追加しない。
+- launchd runtime の source of truth は `launchd/templates/` であり、生成済み file を直接編集しない。
+- npm を使う場合は最初に `npm --version` を実行する。
+- repository 変更は定義済み workflow を経由し、破壊的 git 操作を行わない。

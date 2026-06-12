@@ -10,7 +10,6 @@
     "docs/manual"
   ],
   "commands": {
-    "dev": "./dev-up.sh",
     "backend:install": "cd backend && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
     "backend:run": "cd backend && ./venv/bin/python run.py",
     "backend:test": "cd backend && ./venv/bin/pytest -q",
@@ -18,11 +17,23 @@
     "frontend:install:ci": "cd frontend && npm ci",
     "frontend:dev": "cd frontend && npm run dev",
     "frontend:build": "cd frontend && npm run build",
+    "frontend:start": "cd frontend && npm run start",
     "frontend:typecheck": "cd frontend && npm run typecheck",
     "test": "./scripts/test.sh",
     "test:backend": "./scripts/test.sh backend",
     "test:frontend": "./scripts/test.sh frontend",
     "bootstrap": "./scripts/bootstrap.sh",
-    "doctor": "./scripts/doctor.sh"
+    "bootstrap:build": "./scripts/bootstrap.sh --build",
+    "doctor": "./scripts/doctor.sh",
+    "doctor:logs": "./scripts/doctor.sh --logs",
+    "monitor": "./scripts/monitor.sh",
+    "launchd:render": "./launchd/render-prod-files.sh",
+    "launchd:status": "./launchd/status-prod.sh",
+    "launchd:restart": "./launchd/restart-prod.sh all",
+    "launchd:stop": "./launchd/stop-prod.sh all"
+  },
+  "primary_docs": {
+    "investigation": "docs/L3_implementation/specification_summary.md",
+    "structure": "docs/L1_project/repository_structure.md"
   }
 }

@@ -18,23 +18,14 @@ cp backend/.env.dev.example backend/.env.dev
 cp frontend/.env.dev.example frontend/.env.dev
 ```
 
-## 1. `dev-up.sh` で同時起動
-
-```bash
-cd <REPO_ROOT>
-./dev-up.sh
-```
-
-## 2. 個別起動
-
-### 2-1. バックエンド
+## 1. バックエンド起動
 
 ```bash
 cd <REPO_ROOT>/backend
 DASHBOARD_ENV=dev ./venv/bin/python run.py
 ```
 
-### 2-2. フロントエンド
+## 2. フロントエンド起動
 
 ```bash
 cd <REPO_ROOT>/frontend
@@ -43,17 +34,13 @@ npm run dev
 
 ## 3. 動作確認
 - UI: `http://127.0.0.1:4000`
-- API: `http://127.0.0.1:5001/api/snapshot`
+- health API: `http://127.0.0.1:5001/api/health`
 
 ```bash
-curl -i http://127.0.0.1:5001/api/snapshot
+curl -i http://127.0.0.1:5001/api/health
+./scripts/monitor.sh
 ```
 
 ## 4. 停止
-- 起動中ターミナルで `Ctrl+C`。
-- 残プロセスがある場合のみ以下を実行。
 
-```bash
-pkill -f "backend/run.py" || true
-pkill -f "next dev -p 4000" || true
-```
+各 server を起動したターミナルで `Ctrl+C` を入力する。
