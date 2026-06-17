@@ -11,6 +11,7 @@
 | `backend/` | Flask API、認証、tmux action、状態収集、pytest | `backend/tmux_dashboard/app.py:12-26`, `backend/tests/` |
 | `frontend/` | Next.js App Router UI と backend proxy Route Handler | `frontend/app/page.tsx`, `frontend/app/pane/[paneId]/page.tsx`, `frontend/app/api/` |
 | `launchd/` | macOS LaunchAgent template、runtime file renderer、start/stop/status 操作 | `launchd/render-prod-files.sh:4-24`, `launchd/templates/`, `launchd/restart-prod.sh` |
+| `systemd/` | Linux systemd user service template、runtime file renderer、install script | `systemd/render-prod-files.sh`, `systemd/templates/`, `systemd/install.sh` |
 | `tunnel/` | autossh の dev/prod env template | `tunnel/.env.dev.example`, `tunnel/.env.prod.example` |
 | `server/` | VPS Nginx と tunnel の公開用 example 設定 | `server/nginx/tunnel.starton.jp.conf.example`, `server/tunnel.example.conf` |
 | `scripts/` | bootstrap、read-only doctor、test、monitor | `scripts/bootstrap.sh`, `scripts/doctor.sh`, `scripts/test.sh`, `scripts/monitor.sh` |
@@ -47,9 +48,9 @@
 
 ## 追跡対象と生成物
 
-`launchd/templates/*.tmpl` は追跡対象であり、`launchd/render-prod-files.sh` が checkout 固有の絶対パスを埋めた start script と plist を生成する。生成物、env、log、build artifact、dependency directory は `.gitignore` 対象である。
+`launchd/templates/*.tmpl` および `systemd/templates/*.tmpl` は追跡対象であり、各 `render-prod-files.sh` が checkout 固有の絶対パスを埋めた start script と unit/plist を生成する。生成物、env、log、build artifact、dependency directory は `.gitignore` 対象である。
 
-根拠: `launchd/render-prod-files.sh:4-24`, `.gitignore:21-76`
+根拠: `launchd/render-prod-files.sh:4-24`, `systemd/render-prod-files.sh`, `.gitignore`
 
 ## 未確認事項
 

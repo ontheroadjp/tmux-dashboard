@@ -5,7 +5,8 @@
 - Python 3。CI は Python 3.12 を使用する。根拠: `.github/workflows/ci.yml:16-25`
 - Node.js と npm。CI は Node.js 20 と `npm ci` を使用する。根拠: `.github/workflows/ci.yml:34-44`
 - tmux。collector と action が CLI を実行する。根拠: `backend/tmux_dashboard/collectors.py:58-95`, `backend/tmux_dashboard/actions.py:9-17`
-- production tunnel には autossh と macOS launchd が必要。根拠: `launchd/templates/start-tunnel-prod.sh.tmpl:10-34`, `launchd/templates/*.plist.tmpl`
+- macOS production には autossh と macOS launchd が必要。根拠: `launchd/templates/start-tunnel-prod.sh.tmpl:10-34`, `launchd/templates/*.plist.tmpl`
+- Linux production には systemd user service が必要。根拠: `systemd/templates/`, `systemd/install.sh`
 
 ## 初期セットアップ
 
@@ -112,6 +113,8 @@ cd frontend && npm run build
 
 ## Production
 
+### macOS (launchd)
+
 1. dependency と frontend build を準備する。
 2. `backend/.env.prod`、`frontend/.env.prod`、`tunnel/.env.prod` を作成する。
 3. `./launchd/render-prod-files.sh` で runtime file を生成する。
@@ -126,6 +129,27 @@ production endpoint:
 - autossh remote port: 既定 `10322`
 
 根拠: `launchd/templates/start-frontend-prod.sh.tmpl:28-34`, `launchd/templates/start-backend-prod.sh.tmpl:25-31`, `launchd/templates/start-tunnel-prod.sh.tmpl:21-34`
+
+### Linux (systemd + Tailscale)
+
+1. dependency と frontend build を準備する。
+2. `backend/.env.prod` を作成する。
+3. `bash systemd/install.sh` で unit file を生成・有効化する。
+
+```bash
+cd frontend && npm run build
+cd ..
+bash systemd/install.sh
+systemctl --user start tmux-dashboard-backend tmux-dashboard-frontend
+```
+
+production endpoint:
+
+- frontend: `127.0.0.1:4000`
+- backend: `127.0.0.1:10323`
+- 外部アクセス: Tailscale serve（`tailscale serve http://localhost:4000`）
+
+根拠: `systemd/templates/tmux-dashboard-frontend.service.tmpl`, `systemd/templates/tmux-dashboard-backend.service.tmpl`
 
 ## 診断と操作
 
@@ -144,4 +168,4 @@ production endpoint:
 
 ## 未確認事項
 
-- macOS/launchd 以外の production runtime。理由: container、systemd、他 OS 用の定義がない。確認先: 新規 runtime 定義。
+- container や他 OS 向けの production runtime 定義。理由: 現時点では macOS launchd と Linux systemd のみ定義されている。

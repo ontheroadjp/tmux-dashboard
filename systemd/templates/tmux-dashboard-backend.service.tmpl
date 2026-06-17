@@ -1,0 +1,20 @@
+[Unit]
+Description=tmux-dashboard backend (gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=__REPO_ROOT__/backend
+Environment=DASHBOARD_ENV=prod
+Environment=DASHBOARD_ENV_FILE=__REPO_ROOT__/backend/.env.prod
+ExecStart=__REPO_ROOT__/backend/venv/bin/gunicorn \
+    --workers 2 \
+    --bind 127.0.0.1:10323 \
+    --access-logfile - \
+    --error-logfile - \
+    "tmux_dashboard:create_app()"
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

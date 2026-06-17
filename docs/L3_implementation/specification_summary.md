@@ -78,9 +78,13 @@ pane detail page は pane metadata/output を表示し、許可された action 
 
 ## Runtime
 
-production backend は gunicorn で `127.0.0.1:10323`、frontend は Next.js で `127.0.0.1:10322` に bind する。autossh は VPS port 10322 を local frontend 10322 へ reverse forward する。
+**macOS (launchd):** production backend は gunicorn で `127.0.0.1:10323`、frontend は Next.js で `127.0.0.1:10322` に bind する。autossh は VPS port 10322 を local frontend 10322 へ reverse forward する。
 
 根拠: `launchd/templates/start-backend-prod.sh.tmpl:25-31`, `launchd/templates/start-frontend-prod.sh.tmpl:28-34`, `launchd/templates/start-tunnel-prod.sh.tmpl:21-34`
+
+**Linux (systemd):** production backend は gunicorn で `127.0.0.1:10323`、frontend は Next.js で `127.0.0.1:4000` に bind する。外部アクセスは Tailscale serve が担う。
+
+根拠: `systemd/templates/tmux-dashboard-backend.service.tmpl`, `systemd/templates/tmux-dashboard-frontend.service.tmpl`
 
 ## Data Model
 
