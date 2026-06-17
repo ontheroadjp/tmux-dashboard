@@ -1,0 +1,26 @@
+#!/bin/bash
+set -euo pipefail
+
+FRONTEND_DIR="__REPO_ROOT__/frontend"
+
+if ! command -v node >/dev/null 2>&1; then
+  # mise shims
+  [ -d "$HOME/.local/share/mise/shims" ] && export PATH="$HOME/.local/share/mise/shims:$PATH"
+  # nvm
+  for bin_dir in "$HOME"/.nvm/versions/node/*/bin; do
+    [ -x "$bin_dir/node" ] && export PATH="$bin_dir:$PATH" && break
+  done
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "node not found. Install Node.js or check PATH." >&2
+  exit 1
+fi
+
+if [ ! -f "$FRONTEND_DIR/.next/BUILD_ID" ]; then
+  echo "frontend build is missing. Run: cd frontend && npm run build" >&2
+  exit 1
+fi
+
+cd "$FRONTEND_DIR"
+exec ./node_modules/.bin/next start -H 127.0.0.1 -p 4000

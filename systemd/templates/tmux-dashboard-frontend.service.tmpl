@@ -1,0 +1,14 @@
+[Unit]
+Description=tmux-dashboard frontend (Next.js)
+After=network.target tmux-dashboard-backend.service
+Wants=tmux-dashboard-backend.service
+
+[Service]
+Type=simple
+WorkingDirectory=__REPO_ROOT__/frontend
+ExecStart=__REPO_ROOT__/systemd/start-frontend-prod.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
