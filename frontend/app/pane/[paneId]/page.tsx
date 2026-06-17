@@ -483,8 +483,8 @@ export default function PanePage() {
                   target pane: <strong>{targetPaneId}</strong>
                 </Typography>
 
-                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, mb: 1.5 }}>
-                  {["1", "2", "3", "Yes"].map((label) => (
+                <Box sx={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 1, mb: 1.5 }}>
+                  {["1", "2", "3", "OK", "Yes"].map((label) => (
                     <Button
                       key={label}
                       variant="outlined"
