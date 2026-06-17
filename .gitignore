@@ -42,6 +42,10 @@ venv/
 backend/venv/
 backend/venv/
 
+systemd/tmux-dashboard-backend.service
+systemd/tmux-dashboard-frontend.service
+systemd/start-frontend-prod.sh
+
 launchd/backend.prod.env
 launchd/frontend.prod.env
 launchd/*.env
