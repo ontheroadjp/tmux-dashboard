@@ -86,7 +86,7 @@ Test:
 ./scripts/monitor.sh
 ```
 
-Production:
+Production (macOS):
 
 ```bash
 cd frontend && npm run build
@@ -100,6 +100,15 @@ cd ..
 ./launchd/status-prod.sh
 ./launchd/restart-prod.sh all
 ./launchd/stop-prod.sh all
+```
+
+Production (Linux + Tailscale):
+
+```bash
+cd frontend && npm run build
+cd ..
+bash systemd/install.sh
+systemctl --user start tmux-dashboard-backend tmux-dashboard-frontend
 ```
 
 ## Design Principles
@@ -140,7 +149,7 @@ cd ..
 |---|---|
 | Frontend | Next.js 15, React 19, TypeScript, MUI 7 |
 | Backend | Python, Flask 3.1, itsdangerous, gunicorn |
-| Runtime | macOS launchd, autossh |
+| Runtime | macOS: launchd + autossh / Linux: systemd + Tailscale |
 | External ingress | VPS Nginx, HTTPS, mTLS, CRL |
 
 ## Configuration
