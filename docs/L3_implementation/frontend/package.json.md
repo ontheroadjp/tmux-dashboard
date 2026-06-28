@@ -40,3 +40,7 @@ No additional package dependency is used for restart behavior. The command relie
 
 - `frontend/package.json:5-10`
 - `frontend/package.json:12-27`
+
+## 変更履歴（git log より自動生成）
+
+- eefacc8 chore(#51): add frontend restart script

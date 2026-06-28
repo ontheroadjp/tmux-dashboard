@@ -97,6 +97,7 @@ cd frontend && npm run build
 | `frontend:dev` | `cd frontend && npm run dev` | `frontend/package.json:scripts.dev` |
 | `frontend:build` | `cd frontend && npm run build` | `frontend/package.json:scripts.build` |
 | `frontend:start` | `cd frontend && npm run start` | `frontend/package.json:scripts.start` |
+| `frontend:restart` | `cd frontend && npm run restart` | `frontend/package.json:scripts.restart` |
 | `frontend:typecheck` | `cd frontend && npm run typecheck` | `frontend/package.json:scripts.typecheck` |
 | `test` | `./scripts/test.sh` | `scripts/test.sh:46-50` |
 | `test:backend` | `./scripts/test.sh backend` | `scripts/test.sh:51-53` |

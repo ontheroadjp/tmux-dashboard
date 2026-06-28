@@ -111,6 +111,12 @@ bash systemd/install.sh
 systemctl --user start tmux-dashboard-backend tmux-dashboard-frontend
 ```
 
+Manual frontend restart on Linux:
+
+```bash
+cd frontend && npm run restart
+```
+
 ## Design Principles
 
 - **ローカルサービスを直接公開しない**: Flask と Next.js は `127.0.0.1` に bind し、外部アクセスは VPS Nginx と autossh reverse tunnel を経由します。
