@@ -260,6 +260,9 @@ export default function PanePage() {
     return false;
   }, [activePaneId, detail, tabs]);
   const activeWindowId = detail?.window.id ?? "";
+  const targetWindowLabel = detail
+    ? `window #${detail.window.index} 🔴 ${detail.window.name || "(no name)"}`
+    : "";
   const sortedWindows = useMemo(
     () => [...sessionWindows].sort((a, b) => a.index - b.index),
     [sessionWindows]
@@ -479,9 +482,27 @@ export default function PanePage() {
                   {detail.output || "(empty)"}
                 </Paper>
 
-                <Typography variant="body2" sx={{ mb: 1, overflowWrap: "anywhere" }}>
-                  target pane: <strong>{targetPaneId}</strong>
-                </Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    gap: 2,
+                    mb: 1,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>
+                    target pane: <strong>{targetPaneId}</strong>
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ ml: "auto", overflowWrap: "anywhere", textAlign: "right" }}
+                  >
+                    {targetWindowLabel}
+                  </Typography>
+                </Box>
 
                 <Box sx={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 1, mb: 1.5 }}>
                   {["1", "2", "3", "OK", "Yes"].map((label) => (
