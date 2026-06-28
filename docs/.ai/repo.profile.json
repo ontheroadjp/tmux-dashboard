@@ -18,6 +18,7 @@
     "frontend:dev": "cd frontend && npm run dev",
     "frontend:build": "cd frontend && npm run build",
     "frontend:start": "cd frontend && npm run start",
+    "frontend:restart": "cd frontend && npm run restart",
     "frontend:typecheck": "cd frontend && npm run typecheck",
     "test": "./scripts/test.sh",
     "test:backend": "./scripts/test.sh backend",

@@ -6,6 +6,7 @@
     "dev": "next dev -p 4000",
     "build": "next build",
     "start": "next start -p 4000",
+    "restart": "npm run build && (fuser -k 4000/tcp || true) && npm run start",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
