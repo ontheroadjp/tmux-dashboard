@@ -261,7 +261,7 @@ export default function PanePage() {
   }, [activePaneId, detail, tabs]);
   const activeWindowId = detail?.window.id ?? "";
   const targetWindowLabel = detail
-    ? `window #${detail.window.index} 🔴 ${detail.window.name || "(no name)"}`
+    ? `window #${detail.window.index} ${detail.window.name || "(no name)"}`
     : "";
   const sortedWindows = useMemo(
     () => [...sessionWindows].sort((a, b) => a.index - b.index),
