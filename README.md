@@ -35,6 +35,8 @@ Prerequisites:
 ./scripts/bootstrap.sh --build
 ```
 
+既存 backend venv の Python バージョンが作成時と異なる場合、bootstrap は依存関係の導入を停止します。`./scripts/doctor.sh` でバージョンと backend 依存関係の読み込みを診断できます。
+
 手動 install:
 
 ```bash
@@ -76,6 +78,7 @@ Test:
 ./scripts/test.sh
 ./scripts/test.sh backend
 ./scripts/test.sh frontend
+bash scripts/tests/test_venv.sh
 ```
 
 診断と状態表示:

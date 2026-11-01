@@ -59,15 +59,15 @@ ensure_env_file() {
   local target="$1"
   local example="$2"
   if [ -f "$target" ]; then
-    log "Keep existing env: ${target#$REPO_ROOT/}"
+    log "Keep existing env: ${target#"$REPO_ROOT"/}"
     return 0
   fi
   if [ ! -f "$example" ]; then
-    warn "Missing template: ${example#$REPO_ROOT/}"
+    warn "Missing template: ${example#"$REPO_ROOT"/}"
     return 1
   fi
   cp "$example" "$target"
-  log "Created env from template: ${target#$REPO_ROOT/}"
+  log "Created env from template: ${target#"$REPO_ROOT"/}"
 }
 
 ensure_env_file "$REPO_ROOT/backend/.env.dev" "$REPO_ROOT/backend/.env.dev.example"
@@ -80,6 +80,19 @@ ensure_env_file "$REPO_ROOT/tunnel/.env.prod" "$REPO_ROOT/tunnel/.env.prod.examp
 chmod 600 "$REPO_ROOT/backend/.env.prod" "$REPO_ROOT/tunnel/.env.prod" 2>/dev/null || true
 
 if [ "$DO_INSTALL_DEPS" -eq 1 ]; then
+  if [ -x "$REPO_ROOT/backend/venv/bin/python" ] && [ -f "$REPO_ROOT/backend/venv/pyvenv.cfg" ]; then
+    expected_version="$(sed -n 's/^version[[:space:]]*=[[:space:]]*\([0-9]*\.[0-9]*\).*/\1/p' "$REPO_ROOT/backend/venv/pyvenv.cfg")"
+    if ! actual_version="$("$REPO_ROOT/backend/venv/bin/python" -c 'import sys; print("%s.%s" % sys.version_info[:2])')"; then
+      warn "Backend venv Python cannot run. Recreate backend/venv and reinstall backend/requirements.txt."
+      exit 1
+    elif [ -z "$expected_version" ]; then
+      warn "Backend venv creation version is missing from pyvenv.cfg. Inspect the venv before reinstalling dependencies."
+      exit 1
+    elif [ "$expected_version" != "$actual_version" ]; then
+      warn "Backend venv was created with Python $expected_version but runs Python $actual_version. Recreate backend/venv with a matching Python and reinstall backend/requirements.txt."
+      exit 1
+    fi
+  fi
   if [ ! -x "$REPO_ROOT/backend/venv/bin/python" ]; then
     if command -v python3 >/dev/null 2>&1; then
       log "Create backend venv"

@@ -63,9 +63,9 @@ env_value() {
 check_env_file() {
   local file="$1"
   if [ -f "$file" ]; then
-    ok "env exists: ${file#$REPO_ROOT/}"
+    ok "env exists: ${file#"$REPO_ROOT"/}"
   else
-    fail "env missing: ${file#$REPO_ROOT/}"
+    fail "env missing: ${file#"$REPO_ROOT"/}"
   fi
 }
 
@@ -73,7 +73,7 @@ check_env_required() {
   local file="$1"
   local key="$2"
   if [ ! -f "$file" ]; then
-    fail "cannot validate $key (env missing: ${file#$REPO_ROOT/})"
+    fail "cannot validate $key (env missing: ${file#"$REPO_ROOT"/})"
     return
   fi
   local value
@@ -81,27 +81,56 @@ check_env_required() {
   value="${value%\"}"
   value="${value#\"}"
   if [ -n "$value" ]; then
-    ok "${file#$REPO_ROOT/}: $key is set"
+    ok "${file#"$REPO_ROOT"/}: $key is set"
   else
-    fail "${file#$REPO_ROOT/}: $key is missing"
+    fail "${file#"$REPO_ROOT"/}: $key is missing"
   fi
 }
 
 check_file() {
   local file="$1"
   if [ -f "$file" ]; then
-    ok "file exists: ${file#$REPO_ROOT/}"
+    ok "file exists: ${file#"$REPO_ROOT"/}"
   else
-    fail "file missing: ${file#$REPO_ROOT/}"
+    fail "file missing: ${file#"$REPO_ROOT"/}"
   fi
 }
 
 check_exec() {
   local file="$1"
   if [ -x "$file" ]; then
-    ok "executable exists: ${file#$REPO_ROOT/}"
+    ok "executable exists: ${file#"$REPO_ROOT"/}"
   else
-    fail "executable missing: ${file#$REPO_ROOT/}"
+    fail "executable missing: ${file#"$REPO_ROOT"/}"
+  fi
+}
+
+check_backend_venv() {
+  local python="$REPO_ROOT/backend/venv/bin/python"
+  local cfg="$REPO_ROOT/backend/venv/pyvenv.cfg"
+  local expected_version actual_version
+  if [ ! -x "$python" ]; then
+    return
+  fi
+  if [ ! -f "$cfg" ]; then
+    fail "backend venv configuration missing: backend/venv/pyvenv.cfg"
+  else
+    expected_version="$(sed -n 's/^version[[:space:]]*=[[:space:]]*\([0-9]*\.[0-9]*\).*/\1/p' "$cfg")"
+    if ! actual_version="$("$python" -c 'import sys; print("%s.%s" % sys.version_info[:2])')"; then
+      fail "backend venv Python cannot run"
+      return
+    elif [ -z "$expected_version" ]; then
+      fail "backend venv creation version is missing from pyvenv.cfg"
+    elif [ "$expected_version" != "$actual_version" ]; then
+      fail "backend venv Python version mismatch: created with $expected_version, running $actual_version; recreate the venv and reinstall backend/requirements.txt"
+    else
+      ok "backend venv Python version matches: $actual_version"
+    fi
+  fi
+  if "$python" -c 'import gunicorn, flask' >/dev/null 2>&1; then
+    ok "backend dependencies import: gunicorn, flask"
+  else
+    fail "backend dependencies cannot be imported; reinstall backend/requirements.txt in a compatible venv"
   fi
 }
 
@@ -163,6 +192,7 @@ echo
 echo "== Dependency checks =="
 check_exec "$REPO_ROOT/backend/venv/bin/python"
 check_exec "$REPO_ROOT/backend/venv/bin/gunicorn"
+check_backend_venv
 check_exec "$REPO_ROOT/frontend/node_modules/.bin/next"
 echo
 

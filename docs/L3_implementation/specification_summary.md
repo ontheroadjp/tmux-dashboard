@@ -84,6 +84,10 @@ pane detail page は pane metadata/output を表示し、許可された action 
 
 **Linux (systemd):** production backend は gunicorn で `127.0.0.1:10323`、frontend は Next.js で `127.0.0.1:4000` に bind する。外部アクセスは Tailscale serve が担う。
 
+bootstrap は既存 backend venv の作成時と実行時の Python major/minor が異なる場合、依存関係の導入を停止する。doctor はバージョン不一致と Gunicorn・Flask の import 失敗を診断する。
+
+根拠: `scripts/bootstrap.sh:82-95`, `scripts/doctor.sh:108-135`
+
 根拠: `systemd/templates/tmux-dashboard-backend.service.tmpl`, `systemd/templates/tmux-dashboard-frontend.service.tmpl`
 
 ## Data Model

@@ -18,6 +18,8 @@
 
 既存 env を上書きせず、不足 env の作成、backend venv/dependency、frontend dependency、launchd runtime file の生成を行う。service の start/stop/reload は行わない。frontend build も必要な場合は `./scripts/bootstrap.sh --build` を使う。
 
+既存 backend venv の作成時と実行時の Python major/minor が異なる場合は依存関係の導入を停止し、再作成を案内する。`--skip-install` ではこの確認を行わない。
+
 根拠: `scripts/bootstrap.sh:8-20`, `scripts/bootstrap.sh:58-125`
 
 手動セットアップ:
@@ -164,6 +166,8 @@ production endpoint:
 ```
 
 `doctor.sh` は read-only 診断である。`monitor.sh` は port、launchd、build、env の状態を表示する。restart/stop は launchd state を変更する。
+
+`doctor.sh` は backend venv の Python バージョン不一致と Gunicorn・Flask の import 失敗も検出する。
 
 根拠: `scripts/doctor.sh:8-16`, `scripts/monitor.sh:154-214`, `launchd/restart-prod.sh:10-39`, `launchd/stop-prod.sh:10-40`
 
